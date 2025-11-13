@@ -1,0 +1,187 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">Gestión de Usuarios</h2>
+
+  <!-- Mensajes -->
+  <div *ngIf="okMsg" class="mb-4 p-3 text-center border border-lime-400 rounded bg-[#222] text-white">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg" class="mb-4 p-3 text-center border border-red-500 rounded bg-[#222] text-red-300">
+    {{ errorMsg }}
+  </div>
+
+  <!-- Card: Formulario -->
+  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">
+      {{ editando ? 'Editar usuario' : 'Agregar usuario' }}
+    </h3>
+
+    <!-- error inline de validación espejo -->
+    <div *ngIf="errorMsgInline" class="mb-3 p-2 text-sm rounded bg-[#2a2a2a] border border-red-500 text-red-300">
+      {{ errorMsgInline }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Tipo de identificación -->
+        <div>
+          <label class="block text-sm mb-1">Tipo identificación <span class="text-brand-500">*</span></label>
+          <select formControlName="tipo_identificacion"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+            <option value="">Seleccionar…</option>
+            <option *ngFor="let t of tiposId" [value]="t.id">{{ t.descripcion }}</option>
+          </select>
+        </div>
+
+        <!-- Identificación -->
+        <div>
+          <label class="block text-sm mb-1">Identificación <span class="text-brand-500">*</span></label>
+          <input type="text" formControlName="identificacion"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="Número de documento" autocomplete="off"/>
+        </div>
+
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm mb-1">Nombre <span class="text-brand-500">*</span></label>
+          <input type="text" formControlName="nombre"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="Ej: Laura" autocomplete="off"/>
+        </div>
+
+        <!-- Apellido 1 -->
+        <div>
+          <label class="block text-sm mb-1">Apellido 1 <span class="text-brand-500">*</span></label>
+          <input type="text" formControlName="apellido1"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="Ej: Gómez" autocomplete="off"/>
+        </div>
+
+        <!-- Apellido 2 (opcional) -->
+        <div>
+          <label class="block text-sm mb-1">Apellido 2</label>
+          <input type="text" formControlName="apellido2"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="Opcional" autocomplete="off"/>
+        </div>
+
+        <!-- Correo -->
+        <div>
+          <label class="block text-sm mb-1">Correo <span class="text-brand-500">*</span></label>
+          <input type="email" formControlName="correo"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="tucorreo@dominio.com" autocomplete="email"/>
+        </div>
+
+        <!-- Contraseña (solo requerida si no está editando) -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm mb-1">
+            Contraseña <span class="text-brand-500" *ngIf="!editando">*</span>
+            <span class="text-textc-mute" *ngIf="editando">(dejar en blanco si no cambia)</span>
+          </label>
+          <input type="password" formControlName="contrasennia"
+                 [attr.required]="!editando ? '' : null"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="••••••••" autocomplete="new-password"/>
+        </div>
+
+        <!-- Rol asociado al perfil -->
+        <div>
+          <label class="block text-sm mb-1">Rol <span class="text-brand-500">*</span></label>
+          <select formControlName="perfil_rol"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+            <option value="">Seleccionar rol</option>
+            <option *ngFor="let r of roles" [value]="r.id_rol">{{ r.nombre_rol }}</option>
+          </select>
+        </div>
+
+        <!-- Perfil -->
+        <div>
+          <label class="block text-sm mb-1">Perfil <span class="text-brand-500">*</span></label>
+          <select formControlName="perfil_id"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+            <option value="">Seleccionar perfil</option>
+            <option *ngFor="let p of perfiles" [value]="p.id">{{ p.nombre }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex items-center gap-3">
+        <!-- Botón principal: ghost (ancho completo) -->
+        <button type="submit"
+                [disabled]="saving || form.invalid"
+                class="w-full rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                       font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
+                       disabled:opacity-60">
+          {{ saving ? 'Guardando…' : (editando ? 'Actualizar' : 'Agregar') }}
+        </button>
+
+        <!-- Cancelar (solo edición) -->
+        <button *ngIf="editando" type="button" (click)="cancelarEdicion()"
+                class="rounded-xl border border-white/15 px-5 py-3 text-white hover:bg-white/5 transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Card: Listado -->
+  <section class="mx-auto w-full max-w-5xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Listado</div>
+
+      <div *ngIf="rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
+        No hay registros
+      </div>
+
+      <div *ngIf="rows.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Identificación</th>
+              <th class="px-6 py-3">Nombre completo</th>
+              <th class="px-6 py-3">Correo</th>
+              <th class="px-6 py-3">Rol</th>
+              <th class="px-6 py-3">Perfil</th>
+              <th class="px-6 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of rows" class="border-b border-white/5">
+              <td class="px-6 py-3">{{ u.identificacion }}</td>
+              <td class="px-6 py-3">{{ u.nombre }} {{ u.apellido1 }} {{ u.apellido2 || '' }}</td>
+              <td class="px-6 py-3">{{ u.correo }}</td>
+              <td class="px-6 py-3">{{ u.rol_nombre || u.perfil_rol }}</td>
+              <td class="px-6 py-3">{{ u.perfil_nombre || u.perfil_id }}</td>
+              <td class="px-6 py-3 whitespace-nowrap">
+                <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(u)">Editar</button>
+                <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(u)">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Modal confirmación -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 bg-black/50 grid place-items-center z-50">
+    <div class="bg-surface-800 border border-white/10 rounded-2xl p-6 w-full max-w-md">
+      <h3 class="font-semibold mb-2">{{ confirmTitle }}</h3>
+      <p class="text-sm text-textc-mute mb-5" style="white-space: pre-line">{{ confirmMessage }}</p>
+      <div class="flex gap-3 justify-end">
+        <button type="button" class="px-4 py-2 rounded border border-white/15" (click)="closeConfirm()">Cancelar</button>
+        <button type="button" class="px-4 py-2 rounded bg-red-500 text-black" (click)="doEliminarConfirmado()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>

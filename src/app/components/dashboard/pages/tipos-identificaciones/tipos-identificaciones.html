@@ -1,0 +1,132 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">Gestión de Tipos de Identificación</h2>
+
+  <!-- Alertas -->
+  <div *ngIf="okMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="errorMsgInline"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsgInline }}
+  </div>
+
+  <!-- Card: Agregar / Editar -->
+  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">
+      {{ editando ? 'Editar tipo de identificación' : 'Agregar tipo de identificación' }}
+    </h3>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+      <div>
+        <label class="block text-sm mb-1">Tipo de ID <span class="text-brand-500">*</span></label>
+        <input type="text"
+               formControlName="descripcion"
+               [attr.maxlength]="DESC_MAX"
+               (input)="onDescripcionInput($event)"
+               (blur)="checkDuplicado()"
+               autocomplete="off"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Ingresa el tipo de identificación" />
+        <div class="mt-1 text-xs">
+          <span class="text-red-400" *ngIf="(form.controls.descripcion.value?.length ?? 0) >= DESC_MAX">
+            Máximo {{ DESC_MAX }} caracteres.
+          </span>
+          <span class="text-red-400" *ngIf="descError">{{ descError }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="submit" [disabled]="saving"
+                class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                       font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+          {{ saving ? 'Guardando…' : (editando ? 'Actualizar' : 'Agregar') }}
+        </button>
+
+        <button *ngIf="editando" type="button"
+                class="px-4 rounded-xl border border-white/10 hover:bg-white/5 transition"
+                (click)="cancelarEdicion()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Listado -->
+  <section class="mx-auto w-full max-w-5xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Listado</div>
+
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
+        Cargando…
+      </div>
+
+      <div *ngIf="!loadingList && tipos.length === 0" class="px-6 py-10 text-center text-textc-mute">
+        No hay registros
+      </div>
+
+      <div *ngIf="!loadingList && tipos.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Descripción</th>
+              <th class="px-6 py-3">Estado</th>
+              <th class="px-6 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of tipos" class="border-b border-white/5" [class.opacity-60]="t.estado === 'I'">
+              <td class="px-6 py-3">{{ t.descripcion }}</td>
+              <td class="px-6 py-3">
+                <span *ngIf="t.estado === 'A'" class="text-green-300">Activo</span>
+                <span *ngIf="t.estado === 'I'" class="text-gray-400">Inactivo</span>
+              </td>
+              <td class="px-6 py-3 whitespace-nowrap">
+                <ng-container *ngIf="t.estado !== 'I'; else activarTpl">
+                  <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(t)">Editar</button>
+                  <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(t)">Eliminar</button>
+                </ng-container>
+                <ng-template #activarTpl>
+                  <button class="text-cyan-300 hover:text-cyan-200" type="button" (click)="confirmarActivar(t)">
+                    Activar
+                  </button>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Modal confirmación (Eliminar / Desactivar / Activar) -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60"></div>
+
+    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+      <h3 class="text-lg font-semibold mb-2">{{ confirmTitle }}</h3>
+      <p class="text-sm text-textc-mute whitespace-pre-line">{{ confirmMessage }}</p>
+
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button"
+                class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+                (click)="closeConfirm()">Cancelar</button>
+
+        <!-- Aceptar (verde) -->
+        <button type="button"
+                class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600"
+                (click)="doConfirm()">Aceptar</button>
+      </div>
+
+      <button type="button" class="absolute right-3 top-3 text-textc-mute hover:text-white" aria-label="Cerrar"
+              (click)="closeConfirm()">✕</button>
+    </div>
+  </div>
+</div>

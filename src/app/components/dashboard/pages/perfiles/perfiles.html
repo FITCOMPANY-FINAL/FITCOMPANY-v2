@@ -1,0 +1,163 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">Gestión de Perfiles</h2>
+
+  <!-- Alertas -->
+  <div *ngIf="okMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="errorMsgInline"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsgInline }}
+  </div>
+
+  <!-- Card: Formulario -->
+  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">
+      {{ editando ? 'Editar perfil' : 'Agregar perfil' }}
+    </h3>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm mb-1">
+            Nombre del perfil <span class="text-brand-500">*</span>
+          </label>
+          <input type="text"
+                 formControlName="nombre"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                        focus:border-brand-500 placeholder:text-sm"
+                 placeholder="Ej: Vendedor"
+                 autocomplete="off" />
+          <p class="mt-1 text-xs text-textc-mute">Solo letras y espacios. Máx. 100.</p>
+        </div>
+
+        <!-- Rol -->
+        <div>
+          <label class="block text-sm mb-1">
+            Rol asociado <span class="text-brand-500">*</span>
+          </label>
+          <select formControlName="rol"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                         focus:border-brand-500">
+            <option value="">Selecciona un rol</option>
+            <option *ngFor="let r of roles" [value]="r.id_rol">{{ r.nombre_rol }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="block text-sm mb-1">Descripción</label>
+        <input type="text"
+               formControlName="descripcion"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Breve descripción del perfil" />
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex gap-3">
+        <button type="submit"
+                [disabled]="saving"
+                class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                       font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+          {{ saving ? 'Guardando...' : (editando ? 'Actualizar' : 'Agregar') }}
+        </button>
+
+        <button *ngIf="editando" type="button"
+                class="px-4 rounded-xl border border-white/10 hover:bg-white/5 transition"
+                (click)="cancelarEdicion()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Card: Listado -->
+  <section class="mx-auto w-full max-w-5xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Listado</div>
+
+      <!-- Loading -->
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
+        Cargando...
+      </div>
+
+      <!-- Vacío -->
+      <div *ngIf="!loadingList && rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
+        No hay registros
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loadingList && rows.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Nombre</th>
+              <th class="px-6 py-3">Descripción</th>
+              <th class="px-6 py-3">Rol</th>
+              <th class="px-6 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of rows" class="border-b border-white/5">
+              <td class="px-6 py-3">{{ p.nombre }}</td>
+              <td class="px-6 py-3">{{ p.descripcion || '-' }}</td>
+              <td class="px-6 py-3">{{ p.nombre_rol || p.rol }}</td>
+              <td class="px-6 py-3 whitespace-nowrap">
+                <ng-container *ngIf="!isProtected(p); else protegido">
+                  <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(p)">
+                    Editar
+                  </button>
+                  <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(p)">
+                    Eliminar
+                  </button>
+                </ng-container>
+                <ng-template #protegido>
+                  <span class="text-textc-mute">Protegido</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Modal de confirmación (mismo estilo unificado) -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+      <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+      <p class="text-sm text-textc-mute">
+        ¿Seguro que deseas eliminar este perfil?
+      </p>
+
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button"
+                class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+                (click)="closeConfirm()">
+          Cancelar
+        </button>
+        <button type="button"
+                class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600"
+                (click)="doEliminarConfirmado()">
+          Aceptar
+        </button>
+      </div>
+
+      <button type="button"
+              class="absolute right-3 top-3 text-textc-mute hover:text-white"
+              aria-label="Cerrar"
+              (click)="closeConfirm()">✕</button>
+    </div>
+  </div>
+</div>

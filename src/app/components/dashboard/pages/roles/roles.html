@@ -1,0 +1,131 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">Gestión de Roles</h2>
+
+  <!-- Alertas -->
+  <div *ngIf="okMsg"
+       class="mx-auto w-full max-w-2xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg"
+       class="mx-auto w-full max-w-2xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="errorMsgInline"
+       class="mx-auto w-full max-w-2xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsgInline }}
+  </div>
+
+  <!-- Card: Formulario -->
+  <section class="mx-auto w-full max-w-2xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">
+      {{ editando ? 'Editar rol' : 'Agregar rol' }}
+    </h3>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+      <!-- Nombre -->
+      <div>
+        <label class="block text-sm mb-1">Nombre del rol <span class="text-brand-500">*</span></label>
+        <input type="text"
+               formControlName="nombre_rol"
+               [attr.maxlength]="NOMBRE_MAX"
+               autocomplete="off"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Ej: Administrador" />
+        <div class="mt-1 text-xs">
+          <span *ngIf="(form.controls.nombre_rol.value?.length ?? 0) >= NOMBRE_MAX" class="text-red-400">
+            Máximo {{ NOMBRE_MAX }} caracteres.
+          </span>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="block text-sm mb-1">Descripción (opcional)</label>
+        <input type="text"
+               formControlName="descripcion_rol"
+               [attr.maxlength]="DESC_MAX"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Ej: Encargado de seguridad" />
+        <div class="mt-1 text-xs">
+          <span *ngIf="(form.controls.descripcion_rol.value?.length ?? 0) >= DESC_MAX" class="text-red-400">
+            Máximo {{ DESC_MAX }} caracteres.
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="submit" [disabled]="saving"
+                class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                       font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+          {{ saving ? 'Guardando…' : (editando ? 'Actualizar' : 'Agregar') }}
+        </button>
+
+        <button *ngIf="editando" type="button" (click)="cancelarEdicion()"
+                class="px-4 rounded-xl border border-white/10 hover:bg-white/5 transition">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Card: Lista -->
+  <section class="mx-auto w-full max-w-4xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Lista de roles</div>
+
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">Cargando…</div>
+      <div *ngIf="!loadingList && rows.length === 0" class="px-6 py-10 text-center text-textc-mute">No hay registros</div>
+
+      <div *ngIf="!loadingList && rows.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Nombre</th>
+              <th class="px-6 py-3">Descripción</th>
+              <th class="px-6 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of rows" class="border-b border-white/5">
+              <td class="px-6 py-3">{{ r.nombre_rol }}</td>
+              <td class="px-6 py-3">{{ r.descripcion_rol || '—' }}</td>
+              <td class="px-6 py-3 whitespace-nowrap">
+                <ng-container *ngIf="!isProtected(r); else protegido">
+                  <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(r)">Editar</button>
+                  <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(r.id_rol)">Eliminar</button>
+                </ng-container>
+                <ng-template #protegido>
+                  <span class="text-gray-400">Protegido</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Modal confirmación unificado -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60"></div>
+
+    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+      <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+      <p class="text-sm text-textc-mute">¿Seguro que deseas eliminar este rol?</p>
+
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button" class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+                (click)="closeConfirm()">Cancelar</button>
+        <button type="button" class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600"
+                (click)="doEliminarConfirmado()">Aceptar</button>
+      </div>
+
+      <button type="button" class="absolute right-3 top-3 text-textc-mute hover:text-white" aria-label="Cerrar"
+              (click)="closeConfirm()">✕</button>
+    </div>
+  </div>
+</div>

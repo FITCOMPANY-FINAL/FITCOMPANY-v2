@@ -1,0 +1,165 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">
+    {{ editando ? 'Editar compra' : 'Registrar Compra' }}
+  </h2>
+
+  <!-- Mensajes -->
+  <div *ngIf="okMsg" class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg" class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="errorMsgInline" class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsgInline }}
+  </div>
+
+  <!-- Card: Formulario -->
+  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">
+      {{ editando ? 'Editar compra' : 'Registrar compra' }}
+    </h3>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+      <!-- Producto -->
+      <div>
+        <label class="block text-sm mb-1">Producto <span class="text-brand-500">*</span></label>
+        <select formControlName="producto_id"
+                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+          <option value="">Seleccionar producto</option>
+          <option *ngFor="let p of productos" [value]="p.id_producto">
+            {{ p.nombre_producto }}
+          </option>
+        </select>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Cantidad -->
+        <div>
+          <label class="block text-sm mb-1">
+            Cantidad <span class="text-brand-500">*</span>
+            <span class="text-xs text-textc-mute">(entero)</span>
+          </label>
+          <input type="text"
+                 inputmode="numeric"
+                 [value]="cantidadMasked"
+                 (beforeinput)="onBeforeInputDigits($event, 'cantidad', 6)"
+                 (input)="onInputMasked('cantidad', 6, $event)"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500" />
+          <p class="mt-1 text-[11px] text-textc-mute">Máximo 999.999</p>
+        </div>
+
+        <!-- Costo unitario -->
+        <div>
+          <label class="block text-sm mb-1">
+            Costo unitario <span class="text-brand-500">*</span>
+            <span class="text-xs text-textc-mute">(entero en pesos)</span>
+          </label>
+          <input type="text"
+                 inputmode="numeric"
+                 [value]="costoMasked"
+                 (beforeinput)="onBeforeInputDigits($event, 'costo_unitario', 8)"
+                 (input)="onInputMasked('costo_unitario', 8, $event)"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500" />
+          <p class="mt-1 text-[11px] text-textc-mute">Máximo 99.999.999</p>
+        </div>
+      </div>
+
+      <!-- Fecha -->
+      <div>
+        <label class="block text-sm mb-1">Fecha de compra <span class="text-brand-500">*</span></label>
+        <input type="date"
+               formControlName="fecha_compra"
+               max="{{ today }}"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500" />
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button type="submit"
+                [disabled]="saving"
+                class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                       font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+          {{ saving ? 'Guardando...' : (editando ? 'Actualizar compra' : 'Registrar compra') }}
+        </button>
+
+        <button *ngIf="editando" type="button" (click)="cancelarEdicion()"
+                class="rounded-xl border border-white/10 px-4 py-3 hover:bg-white/5 transition">
+          Cancelar edición
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Card: Listado -->
+  <section class="mx-auto w-full max-w-6xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Compras registradas</div>
+
+      <div *ngIf="rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
+        No hay registros
+      </div>
+
+      <div *ngIf="rows.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">ID Compra</th>
+              <th class="px-6 py-3">Producto</th>
+              <th class="px-6 py-3">Cantidad</th>
+              <th class="px-6 py-3">Costo Total</th>
+              <th class="px-6 py-3">Fecha</th>
+              <th class="px-6 py-3">Usuario</th>
+              <th class="px-6 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of rows" class="border-b border-white/5">
+              <td class="px-6 py-3">{{ r.id_compra }}</td>
+              <td class="px-6 py-3">
+                {{ r.producto_nombre }} <span class="text-textc-mute">({{ r.producto }})</span>
+              </td>
+              <td class="px-6 py-3">{{ r.cantidad | number:'1.0-0' }}</td>
+              <td class="px-6 py-3">
+                {{ (r.costo_total ?? (r.cantidad * r.costo_unitario)) | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </td>
+              <td class="px-6 py-3">{{ r.fecha }}</td>
+              <td class="px-6 py-3">{{ r.usuario }}</td>
+              <td class="px-6 py-3">
+                <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(r)">Editar</button>
+                <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(r.id_compra)">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Modal de confirmación -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60"></div>
+
+    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+      <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+      <p class="text-sm text-textc-mute">
+        ¿Seguro que deseas eliminar esta compra?
+      </p>
+
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button"
+                class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+                (click)="closeConfirm()">
+          Cancelar
+        </button>
+        <button type="button"
+                class="rounded-xl bg-red-500/90 text-black font-semibold px-4 py-2 hover:bg-red-400"
+                (click)="doEliminarConfirmado()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

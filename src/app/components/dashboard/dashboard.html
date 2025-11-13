@@ -1,0 +1,20 @@
+<!-- Layout del dashboard: sidebar más oscuro (surface-900) y contenido un poco más claro (surface-800) -->
+<div class="min-h-screen bg-surface-900 text-textc-base flex">
+  
+  <app-sidebar></app-sidebar>
+
+  <!-- Área de contenido -->
+  <section class="flex-1 min-w-0 bg-surface-800">
+    <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-surface-800/80">
+      <h1 class="text-lg font-semibold">Dashboard</h1>
+    </header>
+
+    <!-- Contenido -->
+    <main class="p-6">
+      <div class="">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+    
+  </section>
+</div>

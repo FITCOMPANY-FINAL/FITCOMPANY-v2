@@ -1,0 +1,18 @@
+<header class="sticky top-0 z-50 bg-surface-900/80 backdrop-blur border-b border-white/5">
+  <nav class="container-page h-14 flex items-center justify-between">
+    <a class="font-extrabold tracking-wide" routerLink="/">FITCOMPANY</a>
+
+    <ul class="hidden sm:flex items-center gap-6">
+      <li><a routerLink="/" fragment="planes" class="hover:text-brand-500 transition">Planes</a></li>
+      <li><a routerLink="/" fragment="servicios" class="hover:text-brand-500 transition">Servicios</a></li>
+      <li><a routerLink="/" fragment="contacto" class="hover:text-brand-500 transition">Redes</a></li>
+    </ul>
+
+    <a *ngIf="router.url !== '/login'" routerLink="/login" class="rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500 px-4 py-2 font-semibold
+         hover:bg-brand-500 hover:text-black transition
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+      Inicia Sesión
+    </a>
+
+  </nav>
+</header>

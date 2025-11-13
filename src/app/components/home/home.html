@@ -1,0 +1,147 @@
+<!-- El Home vive fuera del Dashboard; trae su propio navbar -->
+<div class="dark bg-surface-900 text-textc-base min-h-screen">
+    <app-navbar></app-navbar>
+
+    <!-- HERO -->
+    <section id="hero" class="container-page section">
+        <div class="grid gap-6 lg:grid-cols-2 items-strech">
+            <div class="rounded-2xl bg-brand-500/90 p-8 sm:p-10 text-black h-full flex flex-col justify-center">
+                <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+                    FITCOMPANY – TU GIMNASIO DE CONFIANZA
+                </h1>
+                <p class="mt-4 text-lg">
+                    Te invitamos a que hagas parte de nuestra familia y luches por tus objetivos.
+                </p>
+
+                <div class="mt-6 flex gap-3">
+                    <a class="inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold bg-black text-white hover:opacity-90 transition"
+                        routerLink="/login">Empieza ahora</a>
+
+                    <a class="inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold border border-black/40 hover:bg-black/10 transition"
+                        routerLink="/" fragment="planes">Conoce más</a>
+                </div>
+            </div>
+
+            <div class="rounded-2xl overflow-hidden border border-white/10 h-full min-h-[340px]">
+                <img src="img/FotoHome.jpg" alt="Mujer con pesas" class="w-full h-full object-cover" />
+            </div>
+        </div>
+    </section>
+
+    <!-- PLANES -->
+    <section id="planes" class="section">
+        <div class="container-page">
+            <h2 class="text-2xl font-extrabold text-center mb-6">Planes</h2>
+
+            <div class="grid gap-6 md:grid-cols-3">
+                <article class="rounded-2xl bg-surface-800 p-6 border border-white/5 shadow">
+                    <h3 class="font-semibold">Mensual</h3>
+                    <p class="mt-2 text-3xl font-extrabold text-brand-500">$120.000</p>
+                    <ul class="mt-4 space-y-2 text-textc-mute">
+                        <li>✓ Acceso ilimitado</li>
+                        <li>✓ Sin restricción de horario</li>
+                    </ul>
+                    <button
+                        class="mt-6 w-full rounded-xl bg-brand-500 text-black font-semibold py-3 hover:bg-brand-600 transition">
+                        Elegir plan
+                    </button>
+                </article>
+
+                <article class="rounded-2xl bg-brand-500 text-black p-6 border border-black/10 shadow relative">
+                    <div class="absolute -top-2 right-4 text-xs font-bold bg-black text-white px-2 py-1 rounded">Más
+                        popular</div>
+                    <h3 class="font-semibold">Pareja o Familia</h3>
+                    <p class="mt-2 text-3xl font-extrabold">$220.000 / 110.000 x persona</p>
+                    <ul class="mt-4 space-y-2">
+                        <li>✓ Acceso ilimitado</li>
+                        <li>✓ Para dos o más personas</li>
+                    </ul>
+                    <button
+                        class="mt-6 w-full rounded-xl bg-black text-white font-semibold py-3 hover:opacity-90 transition">
+                        Elegir plan
+                    </button>
+                </article>
+
+                <article class="rounded-2xl bg-surface-800 p-6 border border-white/5 shadow">
+                    <h3 class="font-semibold">Estudiantil</h3>
+                    <p class="mt-2 text-3xl font-extrabold text-brand-500">$99.000</p>
+                    <ul class="mt-4 space-y-2 text-textc-mute">
+                        <li>✓ Acceso ilimitados</li>
+                        <li>✓ Restricción de horario</li>
+                    </ul>
+                    <button
+                        class="mt-6 w-full rounded-xl bg-brand-500 text-black font-semibold py-3 hover:bg-brand-600 transition">
+                        Elegir plan
+                    </button>
+                </article>
+            </div>
+
+            <!-- Incluye -->
+            <div class="mt-8 rounded-2xl bg-surface-800 p-6 text-center border border-white/5">
+                <p class="font-semibold text-brand-500 mb-2">Todos nuestros planes incluyen:</p>
+                <div class="grid gap-3 sm:grid-cols-3 text-textc-mute">
+                    <span>– Sin costo de inscripción</span>
+                    <span>– Sin cargos de mantenimiento</span>
+                    <span>– Sin cláusulas de permanencia</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICIOS -->
+    <section id="servicios" class="section">
+        <div class="container-page">
+            <h2 class="text-2xl font-extrabold text-center mb-6">Servicios</h2>
+
+            <div class="grid gap-6 md:grid-cols-3">
+                <article class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                    <h3 class="text-brand-500 font-semibold">Clases Grupales</h3>
+                    <p class="mt-2 text-textc-mute">Entrena en comunidad con entrenadores profesionales en clases como
+                        funcional, zumba y spinning.</p>
+                </article>
+
+                <article class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                    <h3 class="text-brand-500 font-semibold">Entrenamiento Personalizado</h3>
+                    <p class="mt-2 text-textc-mute">Planes según tus objetivos y acompañamiento 1 a 1 con nuestros
+                        expertos.</p>
+                </article>
+
+                <article class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                    <h3 class="text-brand-500 font-semibold">Asesoría Nutricional</h3>
+                    <p class="mt-2 text-textc-mute">Guía alimentaria mensual adaptada a tus metas.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section id="contacto" class="section">
+        <h2 class="text-2xl font-extrabold text-center mb-6">Redes</h2>
+        <div class="container-page grid gap-6 md:grid-cols-3">
+            <div class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                <h4 class="font-semibold mb-2">Ubicación</h4>
+                <p class="text-textc-mute">📍 Calle 9 sur #61-49, Segundo piso</p>
+                <p class="text-xs text-textc-mute mt-1 italic">*Junto al semáforo, ingreso sector Rodeo Alto</p>
+            </div>
+
+            <div class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                <h4 class="font-semibold mb-2">Horario</h4>
+                <ul class="space-y-1 text-textc-mute">
+                    <li>• Lunes a jueves: 5:00 a.m. – 10:00 p.m.</li>
+                    <li>• Viernes: 5:00 a.m. – 9:00 p.m.</li>
+                    <li>• Sáb, dom y festivos: 7:00 a.m. – 2:00 p.m.</li>
+                </ul>
+            </div>
+
+            <div class="rounded-2xl bg-surface-800 p-6 border border-white/5">
+                <h4 class="font-semibold mb-2">Contáctanos</h4>
+                <div class="space-y-2">
+                    <p class="text-textc-mute">📞 310 2991809</p>
+                    <p class="text-textc-mute">📷 @fitcompanygym</p>
+                    <a class="inline-flex items-center justify-center rounded-xl px-4 py-3 font-semibold bg-brand-500 text-black hover:bg-brand-600 transition"
+                        href="https://wa.me/573102991809" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

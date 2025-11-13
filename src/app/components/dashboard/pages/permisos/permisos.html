@@ -1,0 +1,161 @@
+<div class="space-y-6">
+  <h2 class="text-center text-xl font-bold">Gestión de Permisos</h2>
+
+  <!-- Alertas -->
+  <div *ngIf="okMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+    {{ okMsg }}
+  </div>
+  <div *ngIf="errorMsg"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="errorMsgInline"
+       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+    {{ errorMsgInline }}
+  </div>
+
+  <!-- Card: Asignar permiso -->
+  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignar nuevo permiso</h3>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6" novalidate>
+      <!-- Perfil + Formulario -->
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Perfil -->
+        <div>
+          <label class="block text-sm mb-1">Perfil <span class="text-brand-500">*</span></label>
+          <select formControlName="perfilJson"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+            <option value="">Seleccione…</option>
+            <option *ngFor="let p of perfiles" [value]="p._json">
+              {{ p.nombre }} (Rol {{ p.rol }})
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-textc-mute">Campo obligatorio.</p>
+        </div>
+
+        <!-- Formulario -->
+        <div>
+          <label class="block text-sm mb-1">Formulario <span class="text-brand-500">*</span></label>
+          <select formControlName="codigoFormulario"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+            <option value="">Seleccione…</option>
+            <option *ngFor="let f of formularios" [value]="f.CODIGO_FORMULARIO">
+              {{ f.TITULO_FORMULARIO || f.CODIGO_FORMULARIO }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-textc-mute">Campo obligatorio.</p>
+        </div>
+      </div>
+
+      <!-- Acciones (chips con check) -->
+      <div>
+        <div class="text-sm mb-2 text-textc-mute">Acciones permitidas</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- LEER -->
+          <label class="cursor-pointer">
+            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeLeer === 'S'"
+                   (change)="toggle('puedeLeer', $event)">
+            <div
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
+                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
+              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
+              <span>Puedes leer</span>
+            </div>
+          </label>
+
+          <!-- CREAR -->
+          <label class="cursor-pointer">
+            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeCrear === 'S'"
+                   (change)="toggle('puedeCrear', $event)">
+            <div
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
+                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
+              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
+              <span>Puedes crear</span>
+            </div>
+          </label>
+
+          <!-- ACTUALIZAR -->
+          <label class="cursor-pointer">
+            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeActualizar === 'S'"
+                   (change)="toggle('puedeActualizar', $event)">
+            <div
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
+                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
+              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
+              <span>Puedes actualizar</span>
+            </div>
+          </label>
+
+          <!-- ELIMINAR -->
+          <label class="cursor-pointer">
+            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeEliminar === 'S'"
+                   (change)="toggle('puedeEliminar', $event)">
+            <div
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
+                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
+              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
+              <span>Puedes eliminar</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Botón -->
+      <button type="submit"
+              [disabled]="saving"
+              class="w-full rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                     font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+        {{ saving ? 'Guardando…' : 'Asignar permiso' }}
+      </button>
+    </form>
+  </section>
+
+  <!-- Card: Listado -->
+  <section class="mx-auto w-full max-w-5xl">
+    <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/5 font-semibold">Permisos asignados</div>
+
+      <!-- Cargando -->
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
+        Cargando...
+      </div>
+
+      <!-- Vacío -->
+      <div *ngIf="!loadingList && permisosAsignados.length === 0" class="px-6 py-10 text-center text-textc-mute">
+        No hay permisos asignados.
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loadingList && permisosAsignados.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-surface-900/60">
+            <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Perfil</th>
+              <th class="px-6 py-3">Formulario</th>
+              <th class="px-6 py-3">Permisos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let pm of permisosAsignados" class="border-b border-white/5">
+              <td class="px-6 py-3">
+                Perfil {{ pm.ID_PERFIL }} (Rol {{ pm.PERFIL_ROL }})
+              </td>
+              <td class="px-6 py-3">{{ pm.TITULO_FORMULARIO || pm.CODIGO_FORMULARIO }}</td>
+              <td class="px-6 py-3">
+                <span *ngIf="pm.PUEDE_CREAR === 'S'">Crear </span>
+                <span *ngIf="pm.PUEDE_LEER === 'S'">Leer </span>
+                <span *ngIf="pm.PUEDE_ACTUALIZAR === 'S'">Actualizar </span>
+                <span *ngIf="pm.PUEDE_ELIMINAR === 'S'">Eliminar </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+</div>

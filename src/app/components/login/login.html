@@ -1,0 +1,70 @@
+<div class="dark bg-surface-900 min-h-screen text-textc-base">
+  <main class="container-page">
+    <section class="min-h-[70vh] flex items-center justify-center">
+      <div class="w-full max-w-md rounded-2xl bg-surface-800 border border-white/5 shadow p-6 sm:p-8">
+        <h1 class="text-xl font-bold mb-6 text-center">Inicia sesión</h1>
+
+        <div *ngIf="okMsg"
+             class="mb-4 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+          {{ okMsg }}
+        </div>
+        <div *ngIf="errorMsg"
+             class="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+          {{ errorMsg }}
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+          <div>
+            <label class="block text-sm mb-1">Correo electrónico</label>
+            <input
+              type="email"
+              formControlName="email"
+              class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+              placeholder="tucorreo@dominio.com"
+              autocomplete="email"
+            />
+            <p class="mt-1 text-xs text-red-400" *ngIf="form.controls.email.touched && form.controls.email.invalid">
+              Ingresa un correo válido.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Contraseña</label>
+            <div class="relative">
+              <input
+                [type]="hide ? 'password' : 'text'"
+                formControlName="password"
+                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 pr-16 outline-none focus:border-brand-500"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="absolute inset-y-0 right-2 my-auto px-2 rounded-lg hover:bg-white/5"
+                (click)="hide = !hide">
+                {{ hide ? 'Mostrar' : 'Ocultar' }}
+              </button>
+            </div>
+            <p class="mt-1 text-xs text-red-400" *ngIf="form.controls.password.touched && form.controls.password.invalid">
+              La contraseña es obligatoria.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            [disabled]="saving || form.invalid"
+            class="w-full rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                   font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                   disabled:opacity-60 disabled:cursor-not-allowed
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+            {{ saving ? 'Entrando...' : 'Entrar' }}
+          </button>
+
+          <div class="text-center text-sm text-textc-mute mt-2">
+            <a routerLink="/" class="text-brand-500 hover:text-brand-600">Volver al inicio</a>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
