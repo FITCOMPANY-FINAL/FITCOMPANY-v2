@@ -2,20 +2,27 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { finalize } from 'rxjs/operators'; // 👈 clave
+import { finalize } from 'rxjs/operators';
+import { environment } from '../../../../../environments/environment';
 
 interface Producto {
   id_producto: number;
   nombre_producto: string;
   descripcion_producto?: string | null;
-  precio_unitario: number;
+  precio_unitario?: number; // Frontend
+  precio_venta?: number; // Backend
+  precio_costo?: number; // Backend
   stock_actual: number;
   stock_minimo: number;
   stock_maximo: number;
-  unidad_medida: number;
-  producto_categoria: number;
+  unidad_medida?: number; // Frontend
+  id_unidad_medida?: number; // Backend
+  producto_categoria?: number; // Frontend
+  id_categoria?: number; // Backend
   nombre_unidad_medida?: string;
   nombre_categoria?: string;
+  activo?: boolean;
+  estado?: 'A' | 'I';
 }
 
 interface UnidadMedida {
@@ -37,7 +44,7 @@ interface Categoria {
 export class Productos implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
-  private API = 'http://localhost:3000/api';
+  private API = environment.apiBaseUrl;
 
   // datos
   rows: Producto[] = [];
@@ -61,6 +68,7 @@ export class Productos implements OnInit {
 
   // máscaras de números
   precioMasked = '';
+  precioCostoMasked = '';
   stockActualMasked = '';
   stockMinimoMasked = '';
   stockMaximoMasked = '';
@@ -68,6 +76,7 @@ export class Productos implements OnInit {
   form = this.fb.nonNullable.group({
     nombre_producto: ['', [Validators.required, Validators.maxLength(120)]],
     descripcion_producto: ['', [Validators.maxLength(255)]],
+    precio_costo: [null as number | null, [Validators.required, Validators.min(0), Validators.max(99_999_999)]],
     precio_unitario: [null as number | null, [Validators.required, Validators.min(1), Validators.max(99_999_999)]],
     stock_actual: [null as number | null, [Validators.required, Validators.min(0)]],
     stock_minimo: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -98,7 +107,7 @@ export class Productos implements OnInit {
   private clampDigits(s: string, maxLen: number) { return this.onlyDigits(s).slice(0, maxLen); }
   private withThousands(d: string) { return d.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
-  onBeforeInputDigits(ev: InputEvent, ctrl: 'precio_unitario' | 'stock_actual' | 'stock_minimo' | 'stock_maximo', maxLen: number) {
+  onBeforeInputDigits(ev: InputEvent, ctrl: 'precio_costo' | 'precio_unitario' | 'stock_actual' | 'stock_minimo' | 'stock_maximo', maxLen: number) {
     const it = ev.inputType || '';
     if (it.startsWith('delete') || it === 'historyUndo' || it === 'historyRedo') return;
 
@@ -116,12 +125,16 @@ export class Productos implements OnInit {
     if (nextDigitsLen > maxLen) ev.preventDefault();
   }
 
-  onInputMasked(ctrl: 'precio_unitario' | 'stock_actual' | 'stock_minimo' | 'stock_maximo', maxLen: number, ev: Event) {
+  onInputMasked(ctrl: 'precio_costo' | 'precio_unitario' | 'stock_actual' | 'stock_minimo' | 'stock_maximo', maxLen: number, ev: Event) {
     const el = ev.target as HTMLInputElement;
     const digits = this.clampDigits(el.value, maxLen);
     const masked = this.withThousands(digits);
 
-    if (ctrl === 'precio_unitario') {
+    if (ctrl === 'precio_costo') {
+      this.precioCostoMasked = masked;
+      this.form.controls.precio_costo.setValue(digits ? Number(digits) : null);
+      this.form.controls.precio_costo.markAsTouched();
+    } else if (ctrl === 'precio_unitario') {
       this.precioMasked = masked;
       this.form.controls.precio_unitario.setValue(digits ? Number(digits) : null);
       this.form.controls.precio_unitario.markAsTouched();
@@ -157,8 +170,27 @@ export class Productos implements OnInit {
   loadData() {
     this.loadingList = true;
     this.http.get<Producto[]>(`${this.API}/productos`).subscribe({
-      next: (rows) => { this.rows = rows || []; this.loadingList = false; },
-      error: () => { this.rows = []; this.loadingList = false; }
+      next: (rows) => { 
+        // Mapear los datos del backend al formato del frontend
+        // Convertir stocks a enteros para evitar problemas con decimales
+        this.rows = (rows || []).map(p => ({
+          ...p,
+          precio_costo: Math.floor(p.precio_costo || 0), // Convertir precio_costo a entero
+          precio_unitario: Math.floor(p.precio_venta || 0), // Mapear precio_venta a precio_unitario
+          stock_actual: Math.floor(p.stock_actual || 0), // Convertir a entero
+          stock_minimo: Math.floor(p.stock_minimo || 0), // Convertir a entero
+          stock_maximo: Math.floor(p.stock_maximo || 0), // Convertir a entero
+          unidad_medida: p.id_unidad_medida || 0, // Mapear id_unidad_medida a unidad_medida
+          producto_categoria: p.id_categoria || 0, // Mapear id_categoria a producto_categoria
+        }));
+        this.loadingList = false; 
+      },
+      error: (e) => { 
+        console.error('Error al cargar productos:', e);
+        this.rows = []; 
+        this.loadingList = false;
+        this.showError('Error al cargar los productos.');
+      }
     });
   }
 
@@ -188,8 +220,18 @@ export class Productos implements OnInit {
 
     // Validaciones locales (antes de activar saving)
     if (!this.form.value.nombre_producto) return this.showInline('El nombre es obligatorio.');
-    if (!(this.form.value.precio_unitario && this.form.value.precio_unitario >= 1 && this.form.value.precio_unitario <= 99_999_999)) {
-      return this.showInline('El precio debe estar entre 1 y 99.999.999.');
+    
+    const precioCostoRaw = this.form.value.precio_costo ?? null;
+    const precioUnitarioRaw = this.form.value.precio_unitario ?? null;
+    
+    if (precioCostoRaw === null || precioCostoRaw < 0 || precioCostoRaw > 99_999_999) {
+      return this.showInline('El precio de costo debe estar entre 0 y 99.999.999.');
+    }
+    if (!precioUnitarioRaw || precioUnitarioRaw < 1 || precioUnitarioRaw > 99_999_999) {
+      return this.showInline('El precio de venta debe estar entre 1 y 99.999.999.');
+    }
+    if (precioUnitarioRaw < precioCostoRaw) {
+      return this.showInline('El precio de venta no puede ser menor que el precio de costo.');
     }
     if (!this.form.value.unidad_medida) return this.showInline('Debes seleccionar la unidad de medida.');
     if (!this.form.value.producto_categoria) return this.showInline('Debes seleccionar la categoría.');
@@ -203,15 +245,26 @@ export class Productos implements OnInit {
     this.errorMsg = '';
     this.errorMsgInline = '';
 
+    // Convertir a enteros para evitar problemas con decimales
+    const precioCosto = Math.floor(precioCostoRaw || 0);
+    const precioUnitario = Math.floor(precioUnitarioRaw || 0);
+    const stockActual = Math.floor(Number(this.form.value.stock_actual) || 0);
+    const stockMinimo = Math.floor(Number(this.form.value.stock_minimo) || 0);
+    const stockMaximo = Math.floor(Number(this.form.value.stock_maximo) || 0);
+    
     const body = {
       nombre_producto: (this.form.value.nombre_producto || '').trim().replace(/\s+/g, ' '),
       descripcion_producto: (this.form.value.descripcion_producto || '').trim().replace(/\s+/g, ' '),
-      precio_unitario: Number(this.form.value.precio_unitario),
-      stock_actual: Number(this.form.value.stock_actual),
-      stock_minimo: Number(this.form.value.stock_minimo),
-      stock_maximo: Number(this.form.value.stock_maximo),
-      unidad_medida: Number(this.form.value.unidad_medida),
-      producto_categoria: Number(this.form.value.producto_categoria),
+      precio_costo: precioCosto,
+      precio_unitario: precioUnitario, // El backend lo mapeará a precio_venta
+      precio_venta: precioUnitario, // También enviar como precio_venta
+      stock_actual: stockActual,
+      stock_minimo: stockMinimo,
+      stock_maximo: stockMaximo,
+      id_unidad_medida: Number(this.form.value.unidad_medida), // Backend espera id_unidad_medida
+      unidad_medida: Number(this.form.value.unidad_medida), // También enviar con nombre del frontend
+      id_categoria: Number(this.form.value.producto_categoria), // Backend espera id_categoria
+      producto_categoria: Number(this.form.value.producto_categoria), // También enviar con nombre del frontend
     };
 
     const req$ = this.editando && this.editId != null
@@ -228,7 +281,13 @@ export class Productos implements OnInit {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
-          this.showError(e?.error?.message || 'Error al guardar producto.');
+          const errorMessage = e?.error?.message || 'Error al guardar producto.';
+          // Si es un error de validación, mostrarlo inline
+          if (e?.status === 400 || e?.status === 409) {
+            this.showInline(errorMessage);
+          } else {
+            this.showError(errorMessage);
+          }
         }
       });
   }
@@ -237,21 +296,36 @@ export class Productos implements OnInit {
     this.editando = true;
     this.editId = p.id_producto ?? null;
 
+    // Mapear los datos del backend al formato del frontend
+    const precioCosto = p.precio_costo ?? 0;
+    const precioUnitario = p.precio_unitario ?? p.precio_venta ?? 0;
+    const unidadMedida = p.unidad_medida ?? p.id_unidad_medida ?? 0;
+    const categoria = p.producto_categoria ?? p.id_categoria ?? 0;
+
     this.form.patchValue({
       nombre_producto: p.nombre_producto ?? '',
       descripcion_producto: p.descripcion_producto ?? '',
-      precio_unitario: p.precio_unitario ?? null,
+      precio_costo: precioCosto,
+      precio_unitario: precioUnitario,
       stock_actual: p.stock_actual ?? null,
       stock_minimo: p.stock_minimo ?? null,
       stock_maximo: p.stock_maximo ?? null,
-      unidad_medida: String(p.unidad_medida ?? ''),
-      producto_categoria: String(p.producto_categoria ?? ''),
+      unidad_medida: String(unidadMedida),
+      producto_categoria: String(categoria),
     });
 
-    this.precioMasked      = this.withThousands(String(p.precio_unitario ?? '').replace(/\D/g, ''));
-    this.stockActualMasked = this.withThousands(String(p.stock_actual ?? '').replace(/\D/g, ''));
-    this.stockMinimoMasked = this.withThousands(String(p.stock_minimo ?? '').replace(/\D/g, ''));
-    this.stockMaximoMasked = this.withThousands(String(p.stock_maximo ?? '').replace(/\D/g, ''));
+    // Convertir a enteros para evitar problemas con decimales (2.00 -> 2)
+    const precioCostoParaMask = Math.floor(precioCosto || 0);
+    const precioParaMask = Math.floor(precioUnitario || 0);
+    const stockActual = Math.floor(p.stock_actual ?? 0);
+    const stockMinimo = Math.floor(p.stock_minimo ?? 0);
+    const stockMaximo = Math.floor(p.stock_maximo ?? 0);
+    
+    this.precioCostoMasked = this.withThousands(String(precioCostoParaMask));
+    this.precioMasked = this.withThousands(String(precioParaMask));
+    this.stockActualMasked = this.withThousands(String(stockActual));
+    this.stockMinimoMasked = this.withThousands(String(stockMinimo));
+    this.stockMaximoMasked = this.withThousands(String(stockMaximo));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -291,6 +365,7 @@ export class Productos implements OnInit {
     this.form.reset({
       nombre_producto: '',
       descripcion_producto: '',
+      precio_costo: null,
       precio_unitario: null,
       stock_actual: null,
       stock_minimo: null,
@@ -298,6 +373,7 @@ export class Productos implements OnInit {
       unidad_medida: '',
       producto_categoria: ''
     });
+    this.precioCostoMasked = '';
     this.precioMasked = '';
     this.stockActualMasked = '';
     this.stockMinimoMasked = '';

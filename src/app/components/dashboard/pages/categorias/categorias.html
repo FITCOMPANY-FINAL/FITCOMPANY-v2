@@ -84,13 +84,18 @@
             <tr class="border-b border-white/5">
               <th class="px-6 py-3">Nombre</th>
               <th class="px-6 py-3">Descripción</th>
+              <th class="px-6 py-3">Estado</th>
               <th class="px-6 py-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of rows" class="border-b border-white/5">
+            <tr *ngFor="let c of rows" class="border-b border-white/5" [class.opacity-60]="c.estado === 'I'">
               <td class="px-6 py-3">{{ c.nombre_categoria }}</td>
               <td class="px-6 py-3">{{ c.descripcion_categoria || '-' }}</td>
+              <td class="px-6 py-3">
+                <span *ngIf="c.estado === 'A'" class="text-green-300">Activa</span>
+                <span *ngIf="c.estado === 'I'" class="text-gray-400">Inactiva</span>
+              </td>
               <td class="px-6 py-3 whitespace-nowrap">
                 <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(c)">
                   Editar

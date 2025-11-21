@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
+import { environment } from '../../../../../environments/environment';
 
 type Unidad = {
   codigo_unidad_medida: number;
   nombre_unidad_medida: string;
+  abreviatura_unidad_medida?: string | null;
   descripcion_unidad_medida?: string;
+  estado?: 'A' | 'I';
 };
 
 @Component({
@@ -20,10 +23,11 @@ type Unidad = {
 export class UnidadesMedidas implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
-  private API = 'http://localhost:3000/api';
+  private API = environment.apiBaseUrl;
 
   // límites / patrón como en tu React
   NOMBRE_MAX = 100;
+  ABREV_MAX = 10;
   DESC_MAX   = 150;
   private PATRON = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\-.]+$/;
 
@@ -51,6 +55,7 @@ export class UnidadesMedidas implements OnInit {
   // form
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(this.NOMBRE_MAX)]],
+    abreviatura: ['', [Validators.maxLength(this.ABREV_MAX)]],
     descripcion: ['', [Validators.maxLength(this.DESC_MAX)]],
   });
 
@@ -76,6 +81,14 @@ export class UnidadesMedidas implements OnInit {
     }
     if (this.nombreError) this.nombreError = '';
   }
+  onAbreviaturaInput(ev: Event) {
+    const el = ev.target as HTMLInputElement;
+    const rec = el.value.slice(0, this.ABREV_MAX);
+    if (el.value !== rec) {
+      el.value = rec;
+      this.form.controls.abreviatura.setValue(rec, { emitEvent: false });
+    }
+  }
   onDescInput(ev: Event) {
     const el = ev.target as HTMLInputElement;
     const rec = el.value.slice(0, this.DESC_MAX);
@@ -88,8 +101,16 @@ export class UnidadesMedidas implements OnInit {
   loadData() {
     this.loadingList = true;
     this.http.get<Unidad[]>(`${this.API}/unidades-medida`).subscribe({
-      next: (rows) => { this.rows = rows || []; this.loadingList = false; },
-      error: () => { this.rows = []; this.loadingList = false; }
+      next: (rows) => { 
+        this.rows = rows || []; 
+        this.loadingList = false; 
+      },
+      error: (e) => { 
+        console.error('Error al cargar unidades de medida:', e);
+        this.rows = []; 
+        this.loadingList = false;
+        this.showError('Error al cargar las unidades de medida.');
+      }
     });
   }
 
@@ -97,12 +118,14 @@ export class UnidadesMedidas implements OnInit {
     if (this.saving) return;
 
     const nombre = (this.form.value.nombre || '').trim().replace(/\s+/g, ' ');
+    const abreviatura = (this.form.value.abreviatura || '').trim().replace(/\s+/g, ' ');
     const descripcion = (this.form.value.descripcion || '').trim().replace(/\s+/g, ' ');
 
     // Validaciones locales (NO activar saving aún)
     if (!nombre) return this.showInline('El nombre es obligatorio.');
     if (!this.PATRON.test(nombre)) return this.showInline('El nombre solo puede contener letras, espacios, guiones y puntos.');
     if (nombre.length > this.NOMBRE_MAX) return this.showInline(`El nombre admite máximo ${this.NOMBRE_MAX} caracteres.`);
+    if (abreviatura && abreviatura.length > this.ABREV_MAX) return this.showInline(`La abreviatura admite máximo ${this.ABREV_MAX} caracteres.`);
     if (descripcion.length > this.DESC_MAX) return this.showInline(`La descripción admite máximo ${this.DESC_MAX} caracteres.`);
 
     // Pasa validación → activar saving
@@ -110,6 +133,7 @@ export class UnidadesMedidas implements OnInit {
 
     const body = {
       nombre_unidad_medida: nombre,
+      abreviatura_unidad_medida: abreviatura || undefined,
       descripcion_unidad_medida: descripcion || undefined,
     };
 
@@ -127,7 +151,13 @@ export class UnidadesMedidas implements OnInit {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
-          this.showError(e?.error?.message || 'Error al guardar la unidad.');
+          const errorMessage = e?.error?.message || 'Error al guardar la unidad.';
+          // Si es un error de validación, mostrarlo inline
+          if (e?.status === 400 || e?.status === 409) {
+            this.showInline(errorMessage);
+          } else {
+            this.showError(errorMessage);
+          }
         }
       });
   }
@@ -137,6 +167,7 @@ export class UnidadesMedidas implements OnInit {
     this.editingRow = row;
     this.form.patchValue({
       nombre: row.nombre_unidad_medida ?? '',
+      abreviatura: row.abreviatura_unidad_medida ?? '',
       descripcion: row.descripcion_unidad_medida ?? ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -198,7 +229,7 @@ export class UnidadesMedidas implements OnInit {
   private resetForm() {
     this.editando = false;
     this.editingRow = null;
-    this.form.reset({ nombre: '', descripcion: '' });
+    this.form.reset({ nombre: '', abreviatura: '', descripcion: '' });
     this.nombreError = '';
   }
 }

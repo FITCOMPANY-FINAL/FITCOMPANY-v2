@@ -3,6 +3,7 @@ export interface Venta {
   fecha: string;
   total: number;
   usuario: string;
+  tipo_id?: number; // Opcional, viene del backend pero no se usa en el frontend
 }
 
 export interface VentaDetalleItem {

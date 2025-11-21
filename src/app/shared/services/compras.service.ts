@@ -14,21 +14,23 @@ export class ComprasService {
   }
 
   crear(body: {
-    cantidad: number;
-    costo_unitario: number;
-    producto_id: number;
-    fecha_compra: string; // YYYY-MM-DD
-  }): Observable<{ id_compra?: number; message?: string; warnings?: any[] }> {
-    return this.http.post<{ id_compra?: number; message?: string; warnings?: any[] }>(this.base, body);
+    detalles: Array<{ id_producto: number; cantidad: number; precio_unitario: number }>;
+    fecha_compra?: string; // YYYY-MM-DD (opcional, usa fecha actual si no se envía)
+    observaciones?: string | null;
+  }): Observable<{ compra?: any; message?: string; warnings?: any[] }> {
+    return this.http.post<{ compra?: any; message?: string; warnings?: any[] }>(this.base, body);
+  }
+
+  obtenerPorId(id: number): Observable<{ detalles: any[]; [key: string]: any }> {
+    return this.http.get<{ detalles: any[]; [key: string]: any }>(`${this.base}/${id}`);
   }
 
   actualizar(id: number, body: {
-    cantidad: number;
-    costo_unitario: number;
-    producto_id: number;
-    fecha_compra: string;
-  }): Observable<{ message?: string; warnings?: any[] }> {
-    return this.http.put<{ message?: string; warnings?: any[] }>(`${this.base}/${id}`, body);
+    detalles: Array<{ id_producto: number; cantidad: number; precio_unitario: number }>;
+    fecha_compra?: string;
+    observaciones?: string | null;
+  }): Observable<{ compra?: any; message?: string; warnings?: any[] }> {
+    return this.http.put<{ compra?: any; message?: string; warnings?: any[] }>(`${this.base}/${id}`, body);
   }
 
   eliminar(id: number): Observable<{ message?: string }> {

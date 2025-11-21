@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
+import { environment } from '../../../../../environments/environment';
 
 type Usuario = {
   tipo_identificacion: string;     // texto
@@ -12,17 +13,16 @@ type Usuario = {
   apellido1: string;
   apellido2?: string | null;
   correo: string;
-  perfil_id: number;               // número
-  perfil_rol: number;              // número
+  id_rol: number;                   // número
   contrasennia?: string | null;    // solo al crear / si cambia
   // opcionales para tabla
   rol_nombre?: string;
-  perfil_nombre?: string;
+  activo?: boolean;
+  estado?: 'A' | 'I';
 };
 
 type Rol    = { id_rol: number; nombre_rol: string };
-type Perfil = { id: number; rol: number; nombre: string; nombre_rol?: string };
-type TipoId = { id: string | number; descripcion: string };
+type TipoId = { id: string | number; nombre?: string; descripcion?: string };
 
 @Component({
   selector: 'app-usuarios',
@@ -34,12 +34,11 @@ type TipoId = { id: string | number; descripcion: string };
 export class Usuarios implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
-  private API = 'http://localhost:3000/api';
+  private API = environment.apiBaseUrl;
 
   // --- datos tabla y combos ---
   rows: Usuario[] = [];
   roles: Rol[] = [];
-  perfiles: Perfil[] = [];
   tiposId: TipoId[] = [];
 
   // --- UI state ---
@@ -73,8 +72,7 @@ export class Usuarios implements OnInit {
     apellido2:           ['', [Validators.pattern(this.PATRON_NOMBRE)]],
     correo:              ['', [Validators.required, Validators.pattern(this.PATRON_EMAIL)]],
     contrasennia:        [''], // requerida solo cuando no se edita (se valida en submit)
-    perfil_rol:          ['', [Validators.required]],
-    perfil_id:           ['', [Validators.required]],
+    id_rol:              ['', [Validators.required]],
   });
 
   ngOnInit(): void {
@@ -96,10 +94,6 @@ export class Usuarios implements OnInit {
       next: (rows) => this.roles = rows || [],
       error: () => this.roles = []
     });
-    this.http.get<Perfil[]>(`${this.API}/perfiles`).subscribe({
-      next: (rows) => this.perfiles = rows || [],
-      error: () => this.perfiles = []
-    });
     this.http.get<TipoId[]>(`${this.API}/tipos-identificacion`).subscribe({
       next: (rows) => this.tiposId = rows || [],
       error: () => this.tiposId = []
@@ -109,8 +103,16 @@ export class Usuarios implements OnInit {
   loadData() {
     this.loadingList = true;
     this.http.get<Usuario[]>(`${this.API}/usuarios`).subscribe({
-      next: (rows) => { this.rows = rows || []; this.loadingList = false; },
-      error: () => { this.rows = []; this.loadingList = false; }
+      next: (rows) => { 
+        this.rows = rows || []; 
+        this.loadingList = false; 
+      },
+      error: (e) => { 
+        console.error('Error al cargar usuarios:', e);
+        this.rows = []; 
+        this.loadingList = false;
+        this.showError('Error al cargar los usuarios.');
+      }
     });
   }
 
@@ -130,8 +132,7 @@ export class Usuarios implements OnInit {
       apellido2:           this.S(this.form.value.apellido2).replace(/\s+/g, ' '),
       correo:              this.S(this.form.value.correo).toLowerCase(),
       contrasennia:        this.form.value.contrasennia ?? '',
-      perfil_id:           Number(this.form.value.perfil_id),
-      perfil_rol:          Number(this.form.value.perfil_rol),
+      id_rol:              Number(this.form.value.id_rol),
     };
 
     // validaciones adicionales
@@ -144,8 +145,7 @@ export class Usuarios implements OnInit {
     if (!f.correo || !this.PATRON_EMAIL.test(f.correo)) return this.showInline('Formato de correo inválido.');
     if (!this.editando && (!f.contrasennia || String(f.contrasennia).length < 3))
       return this.showInline('La contraseña debe tener al menos 3 caracteres.');
-    if (!f.perfil_rol) return this.showInline('Debes seleccionar un rol.');
-    if (!f.perfil_id)  return this.showInline('Debes seleccionar un perfil.');
+    if (!f.id_rol) return this.showInline('Debes seleccionar un rol.');
 
     // listo para enviar
     this.saving = true;
@@ -158,8 +158,7 @@ export class Usuarios implements OnInit {
       apellido1: f.apellido1,
       apellido2: f.apellido2 || undefined,
       correo: f.correo,
-      perfil_id: f.perfil_id,
-      perfil_rol: f.perfil_rol,
+      id_rol: f.id_rol,
       // contraseña solo si crea o si la diligenció en edición
       ...(this.editando ? (f.contrasennia ? { contrasennia: f.contrasennia } : {}) : { contrasennia: f.contrasennia }),
     };
@@ -179,7 +178,13 @@ export class Usuarios implements OnInit {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       error: (e) => {
-        this.showError(e?.error?.message || 'Error al guardar el usuario.');
+        const errorMessage = e?.error?.message || 'Error al guardar el usuario.';
+        // Si es un error de validación, mostrarlo inline
+        if (e?.status === 400 || e?.status === 409) {
+          this.showInline(errorMessage);
+        } else {
+          this.showError(errorMessage);
+        }
       }
     });
   }
@@ -196,8 +201,7 @@ export class Usuarios implements OnInit {
       apellido2: u.apellido2 ?? '',
       correo: u.correo ?? '',
       contrasennia: '', // en edición se deja vacío (solo se envía si lo escribe)
-      perfil_rol: String(u.perfil_rol ?? ''),
-      perfil_id: String(u.perfil_id ?? ''),
+      id_rol: String(u.id_rol ?? ''),
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -244,8 +248,7 @@ export class Usuarios implements OnInit {
       apellido2: '',
       correo: '',
       contrasennia: '',
-      perfil_id: '',
-      perfil_rol: '',
+      id_rol: '',
     });
   }
 }

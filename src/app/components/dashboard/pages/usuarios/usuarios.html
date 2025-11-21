@@ -28,7 +28,7 @@
           <select formControlName="tipo_identificacion"
                   class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
             <option value="">Seleccionar…</option>
-            <option *ngFor="let t of tiposId" [value]="t.id">{{ t.descripcion }}</option>
+            <option *ngFor="let t of tiposId" [value]="t.id">{{ t.nombre || t.descripcion || '-' }}</option>
           </select>
         </div>
 
@@ -78,10 +78,10 @@
         </div>
 
         <!-- Contraseña (solo requerida si no está editando) -->
-        <div class="sm:col-span-2">
+        <div>
           <label class="block text-sm mb-1">
             Contraseña <span class="text-brand-500" *ngIf="!editando">*</span>
-            <span class="text-textc-mute" *ngIf="editando">(dejar en blanco si no cambia)</span>
+            <span class="text-textc-mute text-xs" *ngIf="editando">(dejar en blanco si no cambia)</span>
           </label>
           <input type="password" formControlName="contrasennia"
                  [attr.required]="!editando ? '' : null"
@@ -90,23 +90,13 @@
                  placeholder="••••••••" autocomplete="new-password"/>
         </div>
 
-        <!-- Rol asociado al perfil -->
+        <!-- Rol -->
         <div>
           <label class="block text-sm mb-1">Rol <span class="text-brand-500">*</span></label>
-          <select formControlName="perfil_rol"
+          <select formControlName="id_rol"
                   class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
             <option value="">Seleccionar rol</option>
             <option *ngFor="let r of roles" [value]="r.id_rol">{{ r.nombre_rol }}</option>
-          </select>
-        </div>
-
-        <!-- Perfil -->
-        <div>
-          <label class="block text-sm mb-1">Perfil <span class="text-brand-500">*</span></label>
-          <select formControlName="perfil_id"
-                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
-            <option value="">Seleccionar perfil</option>
-            <option *ngFor="let p of perfiles" [value]="p.id">{{ p.nombre }}</option>
           </select>
         </div>
       </div>
@@ -138,11 +128,18 @@
     <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
       <div class="px-6 py-4 border-b border-white/5 font-semibold">Listado</div>
 
-      <div *ngIf="rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
+      <!-- Loading -->
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
+        Cargando...
+      </div>
+
+      <!-- Vacío -->
+      <div *ngIf="!loadingList && rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
         No hay registros
       </div>
 
-      <div *ngIf="rows.length > 0" class="overflow-x-auto">
+      <!-- Tabla -->
+      <div *ngIf="!loadingList && rows.length > 0" class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-surface-900/60">
             <tr class="border-b border-white/5">
@@ -150,7 +147,6 @@
               <th class="px-6 py-3">Nombre completo</th>
               <th class="px-6 py-3">Correo</th>
               <th class="px-6 py-3">Rol</th>
-              <th class="px-6 py-3">Perfil</th>
               <th class="px-6 py-3">Acciones</th>
             </tr>
           </thead>
@@ -159,8 +155,7 @@
               <td class="px-6 py-3">{{ u.identificacion }}</td>
               <td class="px-6 py-3">{{ u.nombre }} {{ u.apellido1 }} {{ u.apellido2 || '' }}</td>
               <td class="px-6 py-3">{{ u.correo }}</td>
-              <td class="px-6 py-3">{{ u.rol_nombre || u.perfil_rol }}</td>
-              <td class="px-6 py-3">{{ u.perfil_nombre || u.perfil_id }}</td>
+              <td class="px-6 py-3">{{ u.rol_nombre || '-' }}</td>
               <td class="px-6 py-3 whitespace-nowrap">
                 <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(u)">Editar</button>
                 <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(u)">Eliminar</button>

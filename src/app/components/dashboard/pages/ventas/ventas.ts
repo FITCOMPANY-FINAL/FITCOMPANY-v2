@@ -80,12 +80,30 @@ export class Ventas implements OnInit {
     if (before.length + incoming.length + after.length > maxLen) ev.preventDefault();
   }
 
+  getCantidadMasked(i: number): string {
+    const valor = this.lineas.at(i).get('cantidad')?.value || '';
+    // Si es número, convertirlo a entero primero
+    let digits: string;
+    if (typeof valor === 'number') {
+      digits = String(Math.floor(valor));
+    } else {
+      // Si es string, extraer solo dígitos (sin puntos ni comas)
+      digits = this.onlyDigits(String(valor));
+    }
+    return this.withThousands(digits);
+  }
+
   onInputMasked(i: number, controlName: 'cantidad', max: number, ev: Event) {
     const input = ev.target as HTMLInputElement;
     const digits = this.clampDigits(input.value, max);
     const masked = this.withThousands(digits);
     input.value = masked;
-    this.lineas.at(i).get(controlName)?.setValue(masked, { emitEvent: false });
+    // Guardar el valor sin máscara (solo dígitos) en el FormControl para los cálculos
+    const control = this.lineas.at(i).get(controlName);
+    if (control) {
+      control.setValue(digits || '', { emitEvent: true });
+      control.markAsTouched();
+    }
   }
 
   // ---------- productos / data ----------
@@ -152,7 +170,8 @@ export class Ventas implements OnInit {
     }
 
     const p = this.productos.find(pp => Number(pp.id_producto) === idSel);
-    const precio = Number((p as any)?.precio_unitario ?? 0);
+    // El backend puede devolver precio_unitario o precio_venta
+    const precio = Number((p as any)?.precio_unitario ?? (p as any)?.precio_venta ?? 0);
     ctrl.get('precioUnit')?.setValue(precio);
   }
 
@@ -280,10 +299,15 @@ export class Ventas implements OnInit {
         this.lineas.clear();
         (det?.productos || []).forEach((p) => {
           const g = this.crearLinea();
+          // Convertir a enteros para evitar problemas con decimales de la BD
+          const cantidadInt = Math.floor(Number(p.cantidad) || 0);
+          const precioInt = Math.floor(Number(p.precio_unitario) || 0);
+          
+          // Guardar como string sin máscara (solo dígitos) para los cálculos
           g.patchValue({
-            producto: p.id_producto,
-            cantidad: this.withThousands(String(p.cantidad ?? '').replace(/\D/g, '')),
-            precioUnit: Number(p.precio_unitario || 0),
+            producto: String(p.id_producto),
+            cantidad: String(cantidadInt),
+            precioUnit: precioInt,
           });
           this.lineas.push(g);
         });

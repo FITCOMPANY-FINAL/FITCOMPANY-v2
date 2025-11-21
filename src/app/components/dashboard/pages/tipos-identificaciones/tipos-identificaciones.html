@@ -22,22 +22,59 @@
     </h3>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+      <!-- Nombre -->
       <div>
-        <label class="block text-sm mb-1">Tipo de ID <span class="text-brand-500">*</span></label>
+        <label class="block text-sm mb-1">Nombre <span class="text-brand-500">*</span></label>
         <input type="text"
-               formControlName="descripcion"
-               [attr.maxlength]="DESC_MAX"
-               (input)="onDescripcionInput($event)"
+               formControlName="nombre"
+               [attr.maxlength]="NOMBRE_MAX"
+               (input)="onNombreInput($event)"
                (blur)="checkDuplicado()"
                autocomplete="off"
                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
                       focus:border-brand-500 placeholder:text-sm"
-               placeholder="Ingresa el tipo de identificación" />
+               placeholder="Ej: Cédula de Ciudadanía" />
+        <div class="mt-1 text-xs">
+          <span class="text-red-400" *ngIf="(form.controls.nombre.value?.length ?? 0) >= NOMBRE_MAX">
+            Máximo {{ NOMBRE_MAX }} caracteres.
+          </span>
+          <span class="text-red-400" *ngIf="descError">{{ descError }}</span>
+        </div>
+      </div>
+
+      <!-- Abreviatura -->
+      <div>
+        <label class="block text-sm mb-1">Abreviatura</label>
+        <input type="text"
+               formControlName="abreviatura"
+               [attr.maxlength]="ABREV_MAX"
+               (input)="onAbreviaturaInput($event)"
+               autocomplete="off"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Ej: CC" />
+        <div class="mt-1 text-xs">
+          <span class="text-red-400" *ngIf="(form.controls.abreviatura.value?.length ?? 0) >= ABREV_MAX">
+            Máximo {{ ABREV_MAX }} caracteres.
+          </span>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="block text-sm mb-1">Descripción</label>
+        <input type="text"
+               formControlName="descripcion"
+               [attr.maxlength]="DESC_MAX"
+               (input)="onDescripcionInput($event)"
+               autocomplete="off"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Descripción opcional del tipo de identificación" />
         <div class="mt-1 text-xs">
           <span class="text-red-400" *ngIf="(form.controls.descripcion.value?.length ?? 0) >= DESC_MAX">
             Máximo {{ DESC_MAX }} caracteres.
           </span>
-          <span class="text-red-400" *ngIf="descError">{{ descError }}</span>
         </div>
       </div>
 
@@ -75,6 +112,8 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-surface-900/60">
             <tr class="border-b border-white/5">
+              <th class="px-6 py-3">Nombre</th>
+              <th class="px-6 py-3">Abreviatura</th>
               <th class="px-6 py-3">Descripción</th>
               <th class="px-6 py-3">Estado</th>
               <th class="px-6 py-3">Acciones</th>
@@ -82,7 +121,9 @@
           </thead>
           <tbody>
             <tr *ngFor="let t of tipos" class="border-b border-white/5" [class.opacity-60]="t.estado === 'I'">
-              <td class="px-6 py-3">{{ t.descripcion }}</td>
+              <td class="px-6 py-3">{{ t.nombre }}</td>
+              <td class="px-6 py-3">{{ t.abreviatura || '—' }}</td>
+              <td class="px-6 py-3">{{ t.descripcion || '—' }}</td>
               <td class="px-6 py-3">
                 <span *ngIf="t.estado === 'A'" class="text-green-300">Activo</span>
                 <span *ngIf="t.estado === 'I'" class="text-gray-400">Inactivo</span>

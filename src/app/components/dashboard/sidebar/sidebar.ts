@@ -30,7 +30,6 @@ export class Sidebar {
     { label: 'Categorías',             icon: 'ChartBarStacked',   link: 'categorias' },
     { label: 'Roles',                  icon: 'UserCog',           link: 'roles' },
     { label: 'Productos',              icon: 'Box',               link: 'productos' },
-    { label: 'Perfiles',               icon: 'IdCard',            link: 'perfiles' },
     { label: 'Unidades de Medida',     icon: 'Ruler',             link: 'unidades-medidas' },
     { label: 'Permisos',               icon: 'ShieldCheck',       link: 'permisos' },
     { label: 'Tipos de Identificacion',icon: 'Fingerprint',       link: 'tipos-identificaciones' }

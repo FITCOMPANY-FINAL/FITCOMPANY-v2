@@ -41,6 +41,23 @@
       </div>
 
       <div>
+        <label class="block text-sm mb-1">Abreviatura (opcional)</label>
+        <input type="text"
+               formControlName="abreviatura"
+               [attr.maxlength]="ABREV_MAX"
+               (input)="onAbreviaturaInput($event)"
+               autocomplete="off"
+               class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
+                      focus:border-brand-500 placeholder:text-sm"
+               placeholder="Ej: KG, UND, GR" />
+        <div class="mt-1 text-xs">
+          <span class="text-red-400" *ngIf="(form.controls.abreviatura.value?.length ?? 0) >= ABREV_MAX">
+            Máximo {{ ABREV_MAX }} caracteres.
+          </span>
+        </div>
+      </div>
+
+      <div>
         <label class="block text-sm mb-1">Descripción (opcional)</label>
         <input type="text"
                formControlName="descripcion"
@@ -91,14 +108,21 @@
           <thead class="bg-surface-900/60">
             <tr class="border-b border-white/5">
               <th class="px-6 py-3">Nombre</th>
+              <th class="px-6 py-3">Abreviatura</th>
               <th class="px-6 py-3">Descripción</th>
+              <th class="px-6 py-3">Estado</th>
               <th class="px-6 py-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of rows" class="border-b border-white/5">
+            <tr *ngFor="let u of rows" class="border-b border-white/5" [class.opacity-60]="u.estado === 'I'">
               <td class="px-6 py-3">{{ u.nombre_unidad_medida }}</td>
+              <td class="px-6 py-3">{{ u.abreviatura_unidad_medida || '—' }}</td>
               <td class="px-6 py-3">{{ u.descripcion_unidad_medida || '—' }}</td>
+              <td class="px-6 py-3">
+                <span *ngIf="u.estado === 'A'" class="text-green-300">Activa</span>
+                <span *ngIf="u.estado === 'I'" class="text-gray-400">Inactiva</span>
+              </td>
               <td class="px-6 py-3 whitespace-nowrap">
                 <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(u)">Editar</button>
                 <button class="text-red-400 hover:text-red-300" type="button" (click)="confirmarEliminar(u)">Eliminar</button>

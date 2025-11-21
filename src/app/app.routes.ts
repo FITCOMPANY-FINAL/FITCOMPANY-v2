@@ -21,7 +21,6 @@ export const routes: Routes = [
       { path: 'categorias', loadComponent: () => import('./components/dashboard/pages/categorias/categorias').then(m => m.Categorias) },
       { path: 'roles', loadComponent: () => import('./components/dashboard/pages/roles/roles').then(m => m.Roles) },
       { path: 'productos', loadComponent: () => import('./components/dashboard/pages/productos/productos').then(m => m.Productos) },
-      { path: 'perfiles', loadComponent: () => import('./components/dashboard/pages/perfiles/perfiles').then(m => m.Perfiles) },
       { path: 'unidades-medidas', loadComponent: () => import('./components/dashboard/pages/unidades-medidas/unidades-medidas').then(m => m.UnidadesMedidas) },
       { path: 'permisos', loadComponent: () => import('./components/dashboard/pages/permisos/permisos').then(m => m.Permisos) },
       { path: 'tipos-identificaciones', loadComponent: () => import('./components/dashboard/pages/tipos-identificaciones/tipos-identificaciones').then(m => m.TiposIdentificaciones) },

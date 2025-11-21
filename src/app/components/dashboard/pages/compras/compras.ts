@@ -42,8 +42,9 @@ export class Compras implements OnInit {
   form = this.fb.nonNullable.group({
     producto_id: ['', [Validators.required]],
     cantidad: [null as number | null, [Validators.required, Validators.min(1), Validators.max(999999)]],
-    costo_unitario: [null as number | null, [Validators.required, Validators.min(1), Validators.max(99999999)]],
-    fecha_compra: [this.today, [Validators.required]]
+    costo_unitario: [null as number | null, [Validators.required, Validators.min(0), Validators.max(99999999)]],
+    fecha_compra: [this.today, [Validators.required]],
+    observaciones: ['' as string | null]
   });
 
   ngOnInit(): void {
@@ -112,46 +113,62 @@ export class Compras implements OnInit {
   submit() {
     if (this.saving) return;
 
-    // validaciones explícitas (idénticas a React)
+    // Validaciones locales
     if (!this.form.value.producto_id) return this.showInline('Debes seleccionar un producto.');
     if (!(this.form.value.cantidad && this.form.value.cantidad >= 1 && this.form.value.cantidad <= 999999)) {
       return this.showInline('La cantidad debe ser un entero entre 1 y 999.999.');
     }
-    if (!(this.form.value.costo_unitario && this.form.value.costo_unitario >= 1 && this.form.value.costo_unitario <= 99999999)) {
-      return this.showInline('El costo unitario debe ser un entero entre 1 y 99.999.999.');
+    const precioUnitario = this.form.value.costo_unitario ?? null;
+    if (precioUnitario === null || precioUnitario < 0 || precioUnitario > 99999999) {
+      return this.showInline('El precio unitario debe estar entre 0 y 99.999.999.');
     }
     if (!this.form.value.fecha_compra) return this.showInline('Debes seleccionar la fecha de compra.');
 
+    // Pasa validación → activar saving
     this.saving = true;
     this.okMsg = '';
     this.errorMsg = '';
     this.errorMsgInline = '';
 
+    // El backend espera detalles como array
     const body = {
-      producto_id: Number(this.form.value.producto_id),
-      cantidad: Number(this.form.value.cantidad),
-      costo_unitario: Number(this.form.value.costo_unitario),
-      fecha_compra: this.form.value.fecha_compra! // YYYY-MM-DD
+      detalles: [{
+        id_producto: Number(this.form.value.producto_id),
+        cantidad: Math.floor(Number(this.form.value.cantidad) || 0),
+        precio_unitario: Math.floor(precioUnitario || 0)
+      }],
+      fecha_compra: this.form.value.fecha_compra || undefined, // Opcional, backend usa fecha actual si no se envía
+      observaciones: (this.form.value.observaciones || '').trim() || null
     };
 
-    const req$ = (this.editando && this.editId != null)
+    const req$ = this.editando && this.editId != null
       ? this.comprasSrv.actualizar(this.editId, body)
       : this.comprasSrv.crear(body);
 
     req$
-      .pipe(finalize(() => { this.saving = false; this.autoHideMessages(); }))
+      .pipe(finalize(() => { this.saving = false; }))
       .subscribe({
         next: (res) => {
-          if (Array.isArray((res as any)?.warnings) && (res as any).warnings.length > 0) {
-            console.warn('Warnings:', (res as any).warnings);
+          if (Array.isArray(res?.warnings) && res.warnings.length > 0) {
+            console.warn('Warnings:', res.warnings);
+            // Mostrar warnings si existen
+            const warningsMsg = res.warnings.map((w: any) => w.mensaje || w.message).join('; ');
+            this.showOk(`${res?.message || (this.editando ? 'Compra actualizada correctamente.' : 'Compra registrada correctamente.')} ${warningsMsg ? `(Advertencias: ${warningsMsg})` : ''}`);
+          } else {
+            this.showOk(res?.message || (this.editando ? 'Compra actualizada correctamente.' : `Compra registrada correctamente.${res?.compra?.id_compra ? ` (ID: ${res.compra.id_compra})` : ''}`));
           }
-          this.showOk(res?.message || (this.editando ? 'Compra actualizada' : `Compra registrada (ID: ${(res as any)?.id_compra ?? ''})`));
           this.loadData();
           this.resetForm();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
-          this.showError(e?.error?.message || e?.error?.raw || 'Error al guardar la compra.');
+          const errorMessage = e?.error?.message || 'Error al guardar la compra.';
+          // Si es un error de validación, mostrarlo inline
+          if (e?.status === 400 || e?.status === 409) {
+            this.showInline(errorMessage);
+          } else {
+            this.showError(errorMessage);
+          }
         }
       });
   }
@@ -160,16 +177,34 @@ export class Compras implements OnInit {
     this.editando = true;
     this.editId = c.id_compra ?? null;
 
-    this.form.patchValue({
-      producto_id: c.producto as any,
-      cantidad: c.cantidad ?? null,
-      costo_unitario: c.costo_unitario ?? null,
-      fecha_compra: this.ddmmyyyyToISO(c.fecha) || this.today
-    });
+    // Cargar detalles de la compra
+    if (this.editId != null) {
+      this.comprasSrv.obtenerPorId(this.editId).subscribe({
+        next: (compraDetalle) => {
+          // El formulario solo permite un producto, así que tomamos el primero
+          const primerDetalle = compraDetalle.detalles?.[0];
+          
+          if (primerDetalle) {
+            this.form.patchValue({
+              producto_id: String(primerDetalle.id_producto),
+              cantidad: Math.floor(Number(primerDetalle.cantidad_detalle_compra) || 0),
+              costo_unitario: Math.floor(Number(primerDetalle.precio_unitario_compra) || 0),
+              fecha_compra: compraDetalle['fecha_compra'] ? compraDetalle['fecha_compra'].split('T')[0] : this.today,
+              observaciones: compraDetalle['observaciones'] || null
+            });
 
-    this.cantidadMasked = this.withThousands(String(c.cantidad ?? '').replace(/\D/g, ''));
-    const cu = c.costo_unitario ?? '';
-    this.costoMasked = this.withThousands(String(cu).replace(/\D/g, ''));
+            // Aplicar máscaras
+            this.cantidadMasked = this.withThousands(String(Math.floor(Number(primerDetalle.cantidad_detalle_compra) || 0)).replace(/\D/g, ''));
+            this.costoMasked = this.withThousands(String(Math.floor(Number(primerDetalle.precio_unitario_compra) || 0)).replace(/\D/g, ''));
+          } else {
+            this.showError('La compra no tiene detalles.');
+          }
+        },
+        error: (e) => {
+          this.showError(e?.error?.message || 'Error al cargar los detalles de la compra.');
+        }
+      });
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -192,15 +227,23 @@ export class Compras implements OnInit {
     const id = this.pendingDeleteId;
     this.closeConfirm();
 
-    this.comprasSrv.eliminar(id).subscribe({
-      next: (res) => {
-        this.showOk(res?.message || 'Compra eliminada correctamente');
-        this.loadData();
-      },
-      error: (e) => {
-        this.showError(e?.error?.message || e?.error?.raw || 'Error al eliminar compra.');
-      }
-    });
+    this.comprasSrv.eliminar(id)
+      .pipe(finalize(() => {}))
+      .subscribe({
+        next: (res) => {
+          this.showOk(res?.message || 'Compra eliminada correctamente y stock revertido.');
+          this.loadData();
+        },
+        error: (e) => {
+          const errorMessage = e?.error?.message || 'Error al eliminar compra.';
+          // Si es un error de validación, mostrarlo inline
+          if (e?.status === 400 || e?.status === 409) {
+            this.showInline(errorMessage);
+          } else {
+            this.showError(errorMessage);
+          }
+        }
+      });
   }
 
   // Bloquea tecleo/pegado si supera el límite de dígitos (cuenta solo números)
@@ -229,16 +272,24 @@ export class Compras implements OnInit {
       producto_id: '',
       cantidad: null,
       costo_unitario: null,
-      fecha_compra: this.today
+      fecha_compra: this.today,
+      observaciones: null
     });
     this.cantidadMasked = '';
     this.costoMasked = '';
   }
 
-  private ddmmyyyyToISO(ddmmyyyy?: string | null) {
-    if (!ddmmyyyy) return '';
-    const [dd, mm, yyyy] = ddmmyyyy.split('/');
-    if (!dd || !mm || !yyyy) return '';
-    return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+  // Formatea fecha del backend (YYYY-MM-DD) para mostrar
+  formatFecha(fecha?: string | null): string {
+    if (!fecha) return '-';
+    try {
+      const d = new Date(fecha);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    } catch {
+      return fecha;
+    }
   }
 }

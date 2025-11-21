@@ -1,11 +1,11 @@
 export interface Compra {
   id_compra: number;
-  cantidad: number;
-  costo_unitario: number;
-  costo_total?: number;
-  fecha: string;           
-  producto: number;         
-  usuario: string;
-  tipo_id: number;
-  producto_nombre: string;
+  fecha_compra: string;
+  total: number;
+  observaciones?: string | null;
+  creado_en?: string;
+  nombre_usuario: string;
+  email_usuario: string;
+  abreviatura_tipo_identificacion: string;
+  identificacion_usuario: string;
 }

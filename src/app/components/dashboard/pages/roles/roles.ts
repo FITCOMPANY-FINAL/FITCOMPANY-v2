@@ -2,11 +2,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 
 type Rol = {
   id_rol: number;
   nombre_rol: string;
   descripcion_rol?: string | null;
+  estado?: 'A' | 'I';
 };
 
 @Component({
@@ -19,7 +21,7 @@ type Rol = {
 export class Roles implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
-  private API = 'http://localhost:3000/api';
+  private API = environment.apiBaseUrl;
 
   // límites (como tu React)
   NOMBRE_MAX = 50;
@@ -76,8 +78,16 @@ export class Roles implements OnInit {
   loadData() {
     this.loadingList = true;
     this.http.get<Rol[]>(`${this.API}/roles`).subscribe({
-      next: (rows) => { this.rows = rows || []; this.loadingList = false; },
-      error: () => { this.rows = []; this.loadingList = false; }
+      next: (rows) => { 
+        this.rows = rows || []; 
+        this.loadingList = false; 
+      },
+      error: (e) => { 
+        console.error('Error al cargar roles:', e);
+        this.rows = []; 
+        this.loadingList = false;
+        this.showError('Error al cargar los roles.');
+      }
     });
   }
 
@@ -88,12 +98,27 @@ export class Roles implements OnInit {
     const nombre = (this.form.value.nombre_rol || '').trim().replace(/\s+/g, ' ');
     const desc   = (this.form.value.descripcion_rol || '').trim().replace(/\s+/g, ' ');
 
-    if (!nombre) return this.showInline('El nombre es obligatorio.');
-    if (!this.PATRON.test(nombre)) return this.showInline('El nombre solo puede contener letras, espacios, guiones y puntos.');
-    if (nombre.length > this.NOMBRE_MAX) return this.showInline(`El nombre admite máximo ${this.NOMBRE_MAX} caracteres.`);
-    if (desc.length > this.DESC_MAX) return this.showInline(`La descripción admite máximo ${this.DESC_MAX} caracteres.`);
+    if (!nombre) {
+      this.showInline('El nombre es obligatorio.');
+      return;
+    }
+    if (!this.PATRON.test(nombre)) {
+      this.showInline('El nombre solo puede contener letras, espacios, guiones y puntos.');
+      return;
+    }
+    if (nombre.length > this.NOMBRE_MAX) {
+      this.showInline(`El nombre admite máximo ${this.NOMBRE_MAX} caracteres.`);
+      return;
+    }
+    if (desc.length > this.DESC_MAX) {
+      this.showInline(`La descripción admite máximo ${this.DESC_MAX} caracteres.`);
+      return;
+    }
 
     this.saving = true;
+    this.errorMsgInline = ''; // Limpiar errores anteriores
+    this.errorMsg = ''; // Limpiar errores generales
+
     const body = { nombre_rol: nombre, descripcion_rol: desc || '' };
 
     const req$ = (this.editando && this.editId != null)
@@ -102,15 +127,22 @@ export class Roles implements OnInit {
 
     req$.subscribe({
       next: (res) => {
+        this.saving = false;
         this.showOk(res?.message || (this.editando ? 'Rol actualizado.' : 'Rol creado.'));
         this.loadData();
         this.resetForm();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       error: (e) => {
-        this.showError(e?.error?.message || 'Error al guardar el rol.');
-      },
-      complete: () => { this.saving = false; }
+        this.saving = false; // Asegurar que se resetee el estado
+        const errorMessage = e?.error?.message || 'Error al guardar el rol.';
+        // Si es un error de validación, mostrarlo inline
+        if (e?.status === 400 || e?.status === 409) {
+          this.showInline(errorMessage);
+        } else {
+          this.showError(errorMessage);
+        }
+      }
     });
   }
 
@@ -148,14 +180,24 @@ export class Roles implements OnInit {
     const r = this.rows.find(x => x.id_rol === id);
     if (r && this.isProtected(r)) return;
 
-    this.http.delete<{ message?: string }>(`${this.API}/roles/${id}`).subscribe({
+    this.http.delete<{ message?: string; code?: string; requiresDeactivation?: boolean; usuarios?: number }>(`${this.API}/roles/${id}`).subscribe({
       next: (res) => {
         this.showOk(res?.message || 'Rol eliminado correctamente.');
         this.loadData();
       },
       error: (e) => {
-        // manejo de 409 si tu API lo usa
-        this.showError(e?.error?.message || 'No se pudo eliminar el rol.');
+        // Manejo de 409 si el rol está en uso
+        if (e?.status === 409) {
+          const usuarios = Number(e.error.usuarios ?? 0);
+          if (usuarios > 0) {
+            this.showError(`No se puede eliminar el rol porque está siendo usado por ${usuarios} usuario(s).`);
+          } else {
+            this.showError(e?.error?.message || 'No se pudo eliminar el rol.');
+          }
+        } else {
+          this.showError(e?.error?.message || 'No se pudo eliminar el rol.');
+        }
+        this.loadData();
       }
     });
   }

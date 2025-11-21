@@ -39,9 +39,22 @@
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2">
-        <!-- Precio (enmascarado miles, solo dígitos, máx 8) -->
+        <!-- Precio de costo (enmascarado miles, solo dígitos, máx 8) -->
         <div>
-          <label class="block text-sm mb-1">Precio <span class="text-brand-500">*</span></label>
+          <label class="block text-sm mb-1">Precio de costo <span class="text-brand-500">*</span></label>
+          <input type="text"
+                 inputmode="numeric"
+                 [value]="precioCostoMasked"
+                 (beforeinput)="onBeforeInputDigits($event, 'precio_costo', 8)"
+                 (input)="onInputMasked('precio_costo', 8, $event)"
+                 class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+                 placeholder="$0" />
+          <p class="mt-1 text-xs text-textc-mute">Máximo 99.999.999</p>
+        </div>
+
+        <!-- Precio de venta (enmascarado miles, solo dígitos, máx 8) -->
+        <div>
+          <label class="block text-sm mb-1">Precio de venta <span class="text-brand-500">*</span></label>
           <input type="text"
                  inputmode="numeric"
                  [value]="precioMasked"
@@ -52,6 +65,9 @@
           <p class="mt-1 text-xs text-textc-mute">Máximo 99.999.999</p>
         </div>
 
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
         <!-- Stock actual -->
         <div>
           <label class="block text-sm mb-1">Stock actual <span class="text-brand-500">*</span></label>
@@ -63,9 +79,7 @@
                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
                  placeholder="0" />
         </div>
-      </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
         <!-- Stock mínimo -->
         <div>
           <label class="block text-sm mb-1">Stock mínimo <span class="text-brand-500">*</span></label>
@@ -146,7 +160,8 @@
           <thead class="bg-surface-900/60">
             <tr class="border-b border-white/5">
               <th class="px-6 py-3">Nombre</th>
-              <th class="px-6 py-3">Precio</th>
+              <th class="px-6 py-3">Precio compra</th>
+              <th class="px-6 py-3">Precio venta</th>
               <th class="px-6 py-3">Stock</th>
               <th class="px-6 py-3">Unidad</th>
               <th class="px-6 py-3">Categoría</th>
@@ -159,6 +174,9 @@
                   [class.text-red-400]="isOutOfRange(p)"
                   [class.font-semibold]="isOutOfRange(p)">
                 {{ p.nombre_producto }}
+              </td>
+              <td class="px-6 py-3">
+                {{ p.precio_costo | currency:'COP':'symbol-narrow':'1.0-0' }}
               </td>
               <td class="px-6 py-3">
                 {{ p.precio_unitario | currency:'COP':'symbol-narrow':'1.0-0' }}
