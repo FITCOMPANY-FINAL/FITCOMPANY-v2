@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <h2 class="text-center text-xl font-bold">
-        {{ editando ? 'Editar venta' : 'Registrar Venta' }}
+        Registrar Venta
     </h2>
 
     <!-- Mensajes -->
@@ -40,7 +40,7 @@
     <!-- Card: Formulario -->
     <section class="mx-auto w-full max-w-4xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
         <h3 class="text-lg font-semibold text-brand-500 mb-4">
-            {{ editando ? 'Editar venta' : 'Registrar venta' }}
+            Registrar venta
         </h3>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
@@ -100,34 +100,111 @@
                 + Agregar producto
             </button>
 
-            <div *ngIf="!editando" class="mt-6 flex items-center gap-3">
+            <!-- Resumen de productos -->
+            <div class="mt-4 pt-4 border-t border-white/10">
+                <div class="text-center font-semibold whitespace-nowrap">
+                    Total productos:
+                    <span class="text-brand-500">{{ total | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+            </div>
+
+            <!-- Pagos -->
+            <div class="mt-6 pt-6 border-t border-white/10">
+                <h4 class="text-md font-semibold mb-3">Métodos de pago</h4>
+                <div formArrayName="pagos" class="space-y-3">
+                    <div *ngFor="let p of pagos.controls; let i = index" class="grid gap-3 md:grid-cols-12 items-center"
+                        [formGroupName]="i">
+                        <!-- Método de pago -->
+                        <div class="md:col-span-4">
+                            <select
+                                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+                                formControlName="id_metodo_pago">
+                                <option value="">Seleccionar método</option>
+                                <option *ngFor="let mp of metodosPago" [value]="mp.id_metodo_pago">
+                                    {{ mp.nombre_metodo_pago }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Monto -->
+                        <div class="md:col-span-3">
+                            <input type="text" inputmode="numeric" autocomplete="off" placeholder="Monto (máx. 99.999.999)"
+                                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-[14px]"
+                                [value]="getMontoMasked(i)"
+                                (beforeinput)="onBeforeInputDigits($event, i, 8)"
+                                (input)="onInputMontoMasked(i, 8, $event)" />
+                        </div>
+
+                        <!-- Observaciones del pago -->
+                        <div class="md:col-span-4">
+                            <input type="text" placeholder="Observaciones (opcional)"
+                                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-[14px]"
+                                formControlName="observaciones" />
+                        </div>
+
+                        <div class="md:col-span-1 flex justify-end">
+                            <button type="button" class="px-2 py-2 rounded-lg text-pink-400 hover:text-pink-300"
+                                (click)="eliminarPago(i)" aria-label="Quitar pago" title="Quitar pago">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button"
+                    class="w-full mt-3 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500 font-semibold py-3 px-5 hover:bg-brand-500 hover:text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    (click)="agregarPago()">
+                    + Agregar método de pago
+                </button>
+
+                <!-- Resumen de pagos -->
+                <div class="mt-4 pt-4 border-t border-white/10 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-textc-mute">Total pagado:</span>
+                        <span class="font-semibold">{{ totalPagos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div *ngIf="esVentaFiada" class="flex justify-between text-sm">
+                        <span class="text-textc-mute">Saldo pendiente:</span>
+                        <span class="font-semibold text-yellow-400">{{ saldoPendiente | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                    </div>
+                    <div *ngIf="esVentaFiada" class="text-xs text-yellow-400 mt-2">
+                        ⚠️ Esta será una venta fiada
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cliente (solo para ventas fiadas) -->
+            <div *ngIf="requiereCliente" class="mt-6 pt-6 border-t border-white/10">
+                <label class="block text-sm font-semibold mb-2">
+                    Cliente <span class="text-red-400">*</span>
+                </label>
+                <input type="text" placeholder="Nombre del cliente (obligatorio para ventas fiadas)"
+                    class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-[14px]"
+                    formControlName="cliente_desc" maxlength="200" />
+            </div>
+
+            <!-- Fecha y observaciones -->
+            <div class="mt-6 pt-6 border-t border-white/10 grid gap-4 md:grid-cols-2">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Fecha de venta</label>
+                    <input type="date"
+                        class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+                        formControlName="fecha_venta" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Observaciones</label>
+                    <input type="text" placeholder="Observaciones generales (opcional)"
+                        class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-[14px]"
+                        formControlName="observaciones" />
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center gap-3">
                 <button type="submit" [disabled]="saving" class="rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500 font-semibold px-5 py-3
                        hover:bg-brand-500 hover:text-black transition focus-visible:outline-none focus-visible:ring-2
                        focus-visible:ring-brand-500 basis-[100%] lg:basis-[100%]">
                     {{ saving ? 'Guardando...' : 'Registrar venta' }}
                 </button>
-
-            </div>
-
-
-            <div *ngIf="editando" class="mt-6 flex items-center gap-3">
-                <div class="flex gap-3 flex-1">
-                    <button type="submit" [disabled]="saving" class="rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500 font-semibold px-5 py-3
-                    hover:bg-brand-500 hover:text-black transition focus-visible:outline-none focus-visible:ring-2
-                    focus-visible:ring-brand-500 basis-1/2">
-                        {{ saving ? 'Guardando...' : 'Actualizar venta' }}
-                    </button>
-
-                    <button type="button" (click)="cancelarEdicion()"
-                        class="rounded-xl border border-white/10 px-5 py-3 hover:bg-white/5 transition basis-1/2">
-                        Cancelar edición
-                    </button>
-                </div>
-
-            </div>
-            <div class="text-center font-semibold whitespace-nowrap">
-                Total:
-                <span class="text-brand-500">{{ total | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             </div>
         </form>
     </section>
@@ -148,19 +225,39 @@
                             <th class="px-6 py-3">ID Venta</th>
                             <th class="px-6 py-3">Fecha</th>
                             <th class="px-6 py-3">Total</th>
+                            <th class="px-6 py-3">Estado</th>
+                            <th class="px-6 py-3">Cliente</th>
                             <th class="px-6 py-3">Usuario</th>
                             <th class="px-6 py-3">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let r of rows" class="border-b border-white/5">
+                        <tr *ngFor="let r of rows" class="border-b border-white/5"
+                            [class.bg-yellow-500/10]="r.es_fiado && r.estado === 'PENDIENTE'">
                             <td class="px-6 py-3">{{ r.id_venta }}</td>
                             <td class="px-6 py-3">{{ r.fecha }}</td>
                             <td class="px-6 py-3">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                            <td class="px-6 py-3">
+                                <span *ngIf="r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold"
+                                    [class.bg-yellow-500/20]="r.estado === 'PENDIENTE'"
+                                    [class.text-yellow-400]="r.estado === 'PENDIENTE'"
+                                    [class.bg-green-500/20]="r.estado === 'PAGADA'"
+                                    [class.text-green-400]="r.estado === 'PAGADA'">
+                                    {{ r.estado || 'PENDIENTE' }}
+                                    <span *ngIf="r.saldo_pendiente && r.saldo_pendiente > 0" class="ml-1">
+                                        ({{ r.saldo_pendiente | currency:'COP':'symbol-narrow':'1.0-0' }})
+                                    </span>
+                                </span>
+                                <span *ngIf="!r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
+                                    PAGADA
+                                </span>
+                            </td>
+                            <td class="px-6 py-3">
+                                <span *ngIf="r.cliente_desc" class="text-textc-mute">{{ r.cliente_desc }}</span>
+                                <span *ngIf="!r.cliente_desc" class="text-textc-mute">-</span>
+                            </td>
                             <td class="px-6 py-3">{{ r.usuario }}</td>
                             <td class="px-6 py-3">
-                                <button class="text-brand-500 hover:text-brand-600 mr-3" type="button"
-                                    (click)="editar(r)">Editar</button>
                                 <button class="text-red-400 hover:text-red-300" type="button"
                                     (click)="confirmarEliminar(r.id_venta)">Eliminar</button>
                             </td>

@@ -20,8 +20,23 @@
     </li>
   </ul>
 
-  <!-- Footer (acción secundaria) -->
-  <div class="border-t border-white/5 p-3">
+  <!-- Footer: Información del usuario y cerrar sesión -->
+  <div class="border-t border-white/5 p-3 space-y-3">
+    <!-- Información del usuario -->
+    <div *ngIf="usuario" class="px-3 py-2 rounded-lg bg-surface-800/50 border border-white/5">
+      <div class="text-xs text-textc-mute mb-1">Usuario actual</div>
+      <div class="text-sm font-semibold text-white truncate" [title]="usuario.nombre">
+        {{ usuario.nombre || 'Sin nombre' }}
+      </div>
+      <div class="text-xs text-textc-mute truncate" [title]="usuario.rol">
+        {{ usuario.rol }}
+      </div>
+      <div class="text-xs text-textc-mute truncate" [title]="usuario.correo">
+        {{ usuario.correo }}
+      </div>
+    </div>
+    
+    <!-- Botón cerrar sesión -->
     <button class="w-full rounded-lg bg-brand-600/10 text-brand-500 px-3 py-2 text-sm
                    hover:bg-brand-600/20 transition" (click)="openLogoutConfirm()">
       Cerrar sesión
