@@ -1,14 +1,31 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { RouterLink, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../shared/services/auth.service';
+import { TokenPayload } from '../../../shared/models/usuario.model';
 
 interface MenuItem {
   label: string;
   icon: string;
   link: string;
 }
+
+// Mapeo de URLs a iconos
+const ICON_MAP: { [key: string]: string } = {
+  '/dashboard/overview': 'LayoutDashboard',
+  '/dashboard/usuarios': 'User',
+  '/dashboard/compras': 'ShoppingCart',
+  '/dashboard/ventas': 'ShoppingBasket',
+  '/dashboard/categorias': 'ChartBarStacked',
+  '/dashboard/roles': 'UserCog',
+  '/dashboard/productos': 'Box',
+  '/dashboard/unidades-medidas': 'Ruler',
+  '/dashboard/unidades-medida': 'Ruler',
+  '/dashboard/permisos': 'ShieldCheck',
+  '/dashboard/tipos-identificaciones': 'Fingerprint',
+  '/dashboard/tipos-identificacion': 'Fingerprint',
+};
 
 @Component({
   selector: 'app-sidebar',
@@ -17,23 +34,85 @@ interface MenuItem {
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss'
 })
-export class Sidebar {
+export class Sidebar implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
 
-  // Menú
-  menu: MenuItem[] = [
-    { label: 'Overview',               icon: 'LayoutDashboard',   link: 'overview' },
-    { label: 'Usuarios',               icon: 'User',              link: 'usuarios' },
-    { label: 'Compras',                icon: 'ShoppingCart',      link: 'compras' },
-    { label: 'Ventas',                 icon: 'ShoppingBasket',    link: 'ventas' },
-    { label: 'Categorías',             icon: 'ChartBarStacked',   link: 'categorias' },
-    { label: 'Roles',                  icon: 'UserCog',           link: 'roles' },
-    { label: 'Productos',              icon: 'Box',               link: 'productos' },
-    { label: 'Unidades de Medida',     icon: 'Ruler',             link: 'unidades-medidas' },
-    { label: 'Permisos',               icon: 'ShieldCheck',       link: 'permisos' },
-    { label: 'Tipos de Identificacion',icon: 'Fingerprint',       link: 'tipos-identificaciones' }
-  ];
+  // Menú dinámico basado en formularios del JWT
+  menu: MenuItem[] = [];
+  
+  // Información del usuario
+  usuario: {
+    nombre: string;
+    rol: string;
+    correo: string;
+  } | null = null;
+
+  ngOnInit(): void {
+    this.loadMenuFromToken();
+    this.loadUserInfo();
+  }
+
+  private loadMenuFromToken() {
+    const formularios = this.auth.getFormulariosFromToken();
+    
+    // Solo mostrar formularios que tienen URL y NO son padres (solo los hijos/clicables)
+    this.menu = formularios
+      .filter(f => f.url && !f.es_padre)
+      .map(f => {
+        // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
+        let urlPath = f.url?.replace('/dashboard/', '') || '';
+        
+        // Normalizar rutas que pueden tener variaciones
+        if (urlPath === 'unidades-medida') {
+          urlPath = 'unidades-medidas'; // La ruta real en Angular
+        }
+        if (urlPath === 'tipos-identificacion') {
+          urlPath = 'tipos-identificaciones'; // La ruta real en Angular
+        }
+        
+        return {
+          label: f.titulo,
+          icon: this.getIconForUrl(f.url || ''),
+          link: urlPath
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar alfabéticamente
+    
+    console.log('📋 Menú cargado desde JWT:', this.menu.length, 'formularios');
+  }
+
+  private getIconForUrl(url: string): string {
+    // Buscar icono en el mapa
+    if (ICON_MAP[url]) {
+      return ICON_MAP[url];
+    }
+    
+    // Iconos por defecto según palabras clave
+    if (url.includes('overview')) return 'LayoutDashboard';
+    if (url.includes('usuario')) return 'User';
+    if (url.includes('compra')) return 'ShoppingCart';
+    if (url.includes('venta')) return 'ShoppingBasket';
+    if (url.includes('categoria')) return 'ChartBarStacked';
+    if (url.includes('rol')) return 'UserCog';
+    if (url.includes('producto')) return 'Box';
+    if (url.includes('unidad') || url.includes('medida')) return 'Ruler';
+    if (url.includes('permiso')) return 'ShieldCheck';
+    if (url.includes('identificacion') || url.includes('tipo')) return 'Fingerprint';
+    
+    return 'FileText'; // Icono por defecto
+  }
+
+  private loadUserInfo() {
+    const user = this.auth.getUserFromToken();
+    if (user) {
+      const nombre = `${user.nombres || user.nombre || ''} ${user.apellido1 || ''} ${user.apellido2 || ''}`.trim();
+      const rol = user.nombre_rol || user.rol || 'Sin rol';
+      const correo = user.email || user.correo || 'Sin correo';
+      
+      this.usuario = { nombre, rol, correo };
+    }
+  }
 
   // --- Modal de confirmación de logout ---
   logoutConfirmOpen = false;

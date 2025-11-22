@@ -10,6 +10,7 @@ import {
 import { finalize } from 'rxjs/operators';
 import { VentasService } from '../../../../shared/services/ventas.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
+import { MetodosPagoService, MetodoPago } from '../../../../shared/services/metodos-pago.service';
 import { Venta } from '../../../../shared/models/venta.model';
 import { Producto } from '../../../../shared/models/producto.model';
 
@@ -24,9 +25,11 @@ export class Ventas implements OnInit {
   private fb = inject(FormBuilder);
   private ventasSrv = inject(VentasService);
   private productosSrv = inject(ProductosService);
+  private metodosPagoSrv = inject(MetodosPagoService);
 
   rows: Venta[] = [];
   productos: Producto[] = [];
+  metodosPago: MetodoPago[] = [];
 
   okMsg = '';
   errorMsg = '';
@@ -35,9 +38,6 @@ export class Ventas implements OnInit {
   violations: any[] = [];
   violTitle = '';
   private violTimer: any = null;
-
-  editando = false;
-  private editId: number | null = null;
 
   confirmOpen = false;
   private pendingDeleteId: number | null = null;
@@ -48,16 +48,32 @@ export class Ventas implements OnInit {
 
   form = this.fb.group({
     lineas: this.fb.array<FormGroup>([]),
+    pagos: this.fb.array<FormGroup>([]),
+    cliente_desc: [''],
+    observaciones: [''],
+    fecha_venta: [''], // YYYY-MM-DD
   });
 
   get lineas(): FormArray<FormGroup> {
     return this.form.controls.lineas as FormArray<FormGroup>;
   }
 
+  get pagos(): FormArray<FormGroup> {
+    return this.form.controls.pagos as FormArray<FormGroup>;
+  }
+
+  get today(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   ngOnInit(): void {
     this.loadProductos();
+    this.loadMetodosPago();
     this.loadRows();
     if (this.lineas.length === 0) this.agregarLinea();
+    // Inicializar fecha con hoy
+    this.form.patchValue({ fecha_venta: this.today });
   }
 
   // ---------- máscara ----------
@@ -111,6 +127,13 @@ export class Ventas implements OnInit {
     this.productosSrv.listar().subscribe({
       next: (rows) => this.productos = rows || [],
       error: () => this.productos = [],
+    });
+  }
+
+  loadMetodosPago() {
+    this.metodosPagoSrv.listar().subscribe({
+      next: (rows) => this.metodosPago = rows || [],
+      error: () => this.metodosPago = [],
     });
   }
 
@@ -190,6 +213,65 @@ export class Ventas implements OnInit {
     }, 0);
   }
 
+  // ---------- pagos ----------
+  private crearPago(): FormGroup {
+    return this.fb.group({
+      id_metodo_pago: ['', [Validators.required]],
+      monto: ['', [Validators.required, Validators.min(1)]],
+      observaciones: [''],
+    });
+  }
+
+  agregarPago() {
+    this.pagos.push(this.crearPago());
+  }
+
+  eliminarPago(i: number) {
+    this.pagos.removeAt(i);
+  }
+
+  getMontoMasked(i: number): string {
+    const valor = this.pagos.at(i).get('monto')?.value || '';
+    let digits: string;
+    if (typeof valor === 'number') {
+      digits = String(Math.floor(valor));
+    } else {
+      digits = this.onlyDigits(String(valor));
+    }
+    return this.withThousands(digits);
+  }
+
+  onInputMontoMasked(i: number, max: number, ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const digits = this.clampDigits(input.value, max);
+    const masked = this.withThousands(digits);
+    input.value = masked;
+    const control = this.pagos.at(i).get('monto');
+    if (control) {
+      control.setValue(digits ? Number(digits) : null, { emitEvent: true });
+      control.markAsTouched();
+    }
+  }
+
+  get totalPagos(): number {
+    return this.pagos.controls.reduce((acc, g) => {
+      const monto = this.unmask(g.get('monto')?.value);
+      return acc + monto;
+    }, 0);
+  }
+
+  get saldoPendiente(): number {
+    return Math.max(0, this.total - this.totalPagos);
+  }
+
+  get esVentaFiada(): boolean {
+    return this.totalPagos < this.total;
+  }
+
+  get requiereCliente(): boolean {
+    return this.esVentaFiada;
+  }
+
   // ---------- mensajes ----------
   private autoHide(ms = 4000) {
     window.setTimeout(() => { this.okMsg = ''; this.errorMsg = ''; }, ms);
@@ -234,6 +316,29 @@ export class Ventas implements OnInit {
     if (!(tot >= 1 && tot <= Ventas.TOPE_TOTAL)) {
       return `El total de la venta no puede superar $ ${Ventas.TOPE_TOTAL.toLocaleString('es-CO')}.`;
     }
+
+    // Validar pagos
+    for (let i = 0; i < this.pagos.length; i++) {
+      const g = this.pagos.at(i);
+      const idMetodo = Number(g.get('id_metodo_pago')?.value);
+      const monto = this.unmask(g.get('monto')?.value);
+
+      if (!idMetodo) return `Debes seleccionar el método de pago en la fila #${i + 1}.`;
+      if (!(monto >= 1 && monto <= 99_999_999)) return `El monto del pago #${i + 1} debe estar entre 1 y 99.999.999.`;
+    }
+
+    // Validar que si es venta fiada, cliente_desc es obligatorio
+    if (this.esVentaFiada) {
+      const cliente = (this.form.get('cliente_desc')?.value || '').trim();
+      if (!cliente) return 'Para ventas fiadas es obligatorio especificar el nombre del cliente.';
+    }
+
+    // Validar que el total de pagos no exceda el total de la venta (para ventas simples)
+    if (!this.esVentaFiada && this.totalPagos > this.total) {
+      const exceso = this.totalPagos - this.total;
+      return `El total de pagos ($${this.totalPagos.toLocaleString('es-CO')}) excede el total de la venta ($${this.total.toLocaleString('es-CO')}) por $${exceso.toLocaleString('es-CO')}.`;
+    }
+
     return '';
   }
 
@@ -249,20 +354,32 @@ export class Ventas implements OnInit {
       precio_unitario: Number(g.get('precioUnit')?.value || 0),
     }));
 
+    const pagos = this.pagos.length > 0 ? this.pagos.controls.map(g => ({
+      id_metodo_pago: Number(g.get('id_metodo_pago')?.value),
+      monto: this.unmask(g.get('monto')?.value),
+      observaciones: (g.get('observaciones')?.value || '').trim() || null,
+    })) : undefined;
+
+    const clienteDesc = this.esVentaFiada ? (this.form.get('cliente_desc')?.value || '').trim() || null : null;
+    const observaciones = (this.form.get('observaciones')?.value || '').trim() || null;
+    const fechaVenta = this.form.get('fecha_venta')?.value || undefined;
+
+    const body: any = { productos };
+    if (pagos && pagos.length > 0) body.pagos = pagos;
+    if (clienteDesc) body.cliente_desc = clienteDesc;
+    if (observaciones) body.observaciones = observaciones;
+    if (fechaVenta) body.fecha_venta = fechaVenta;
+
     this.saving = true;
     this.clearViolations();
 
-    const req$ = (this.editando && this.editId != null)
-      ? this.ventasSrv.actualizar(this.editId, { productos })
-      : this.ventasSrv.crear({ productos });
-
-    req$.pipe(finalize(() => { this.saving = false; this.autoHide(); }))
+    this.ventasSrv.crear(body).pipe(finalize(() => { this.saving = false; this.autoHide(); }))
       .subscribe({
         next: (res: any) => {
           if (Array.isArray(res?.warnings) && res.warnings.length > 0) {
             console.warn('Warnings:', res.warnings);
           }
-          this.showOk(res?.message || (this.editando ? 'Venta actualizada' : `Venta registrada (ID: ${res?.id_venta ?? ''})`));
+          this.showOk(res?.message || `Venta registrada (ID: ${res?.venta?.id_venta ?? ''})`);
           this.loadRows();
           this.resetForm();
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -292,29 +409,8 @@ export class Ventas implements OnInit {
   }
 
   editar(v: Venta) {
-    this.ventasSrv.detalle(v.id_venta).subscribe({
-      next: (det) => {
-        this.editando = true;
-        this.editId = v.id_venta;
-        this.lineas.clear();
-        (det?.productos || []).forEach((p) => {
-          const g = this.crearLinea();
-          // Convertir a enteros para evitar problemas con decimales de la BD
-          const cantidadInt = Math.floor(Number(p.cantidad) || 0);
-          const precioInt = Math.floor(Number(p.precio_unitario) || 0);
-          
-          // Guardar como string sin máscara (solo dígitos) para los cálculos
-          g.patchValue({
-            producto: String(p.id_producto),
-            cantidad: String(cantidadInt),
-            precioUnit: precioInt,
-          });
-          this.lineas.push(g);
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      },
-      error: () => { this.showError('❌ No se pudo cargar la venta para editar'); }
-    });
+    // NOTA: El backend no tiene funcionalidad de actualizar ventas por ahora
+    this.showError('❌ La funcionalidad de editar ventas no está disponible actualmente.');
   }
 
   confirmarEliminar(id: number) {
@@ -350,15 +446,17 @@ export class Ventas implements OnInit {
     });
   }
 
-  cancelarEdicion() {
-    this.resetForm();
-  }
 
   private resetForm() {
-    this.editando = false;
-    this.editId = null;
-    this.form.reset({ lineas: [] });
+    this.form.reset({ 
+      lineas: [],
+      pagos: [],
+      cliente_desc: '',
+      observaciones: '',
+      fecha_venta: this.today,
+    });
     this.lineas.clear();
+    this.pagos.clear();
     this.agregarLinea();
     this.clearViolations();
   }

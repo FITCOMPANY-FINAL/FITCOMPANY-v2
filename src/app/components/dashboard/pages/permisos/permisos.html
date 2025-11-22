@@ -1,105 +1,68 @@
 <div class="space-y-6">
-  <h2 class="text-center text-xl font-bold">Gestión de Permisos</h2>
+  <div class="text-center space-y-2">
+    <h2 class="text-xl font-bold">Gestión de Permisos</h2>
+    <p class="text-sm text-textc-mute max-w-2xl mx-auto">
+      Este módulo controla qué formularios puede ver cada rol. 
+      Si asignas un formulario a un rol, ese rol tendrá acceso completo (crear, leer, actualizar, eliminar) a ese formulario.
+      <br><strong>Ejemplo:</strong> Si asignas "Ventas" al rol "Vendedor", entonces los usuarios con rol "Vendedor" podrán ver y usar el formulario de Ventas.
+    </p>
+  </div>
 
   <!-- Alertas -->
   <div *ngIf="okMsg"
-       class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+       class="mx-auto w-full max-w-4xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
     {{ okMsg }}
   </div>
   <div *ngIf="errorMsg"
-       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+       class="mx-auto w-full max-w-4xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
     {{ errorMsg }}
   </div>
   <div *ngIf="errorMsgInline"
-       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
+       class="mx-auto w-full max-w-4xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center">
     {{ errorMsgInline }}
   </div>
 
-  <!-- Card: Asignar permiso -->
-  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
-    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignar nuevo permiso</h3>
+  <!-- Card: Asignar permiso individual -->
+  <section class="mx-auto w-full max-w-4xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignar permiso</h3>
+    <p class="text-sm text-textc-mute mb-4">
+      Asigna un formulario a un rol. Si el formulario es hijo de otro, el padre se asignará automáticamente.
+      Al asignar un permiso, el rol tendrá acceso completo (crear, leer, actualizar, eliminar) al formulario.
+    </p>
 
-    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6" novalidate>
-      <!-- Perfil + Formulario -->
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
       <div class="grid gap-4 sm:grid-cols-2">
-        <!-- Perfil -->
+        <!-- Rol -->
         <div>
-          <label class="block text-sm mb-1">Perfil <span class="text-brand-500">*</span></label>
-          <select formControlName="perfilJson"
+          <label class="block text-sm mb-1">Rol <span class="text-brand-500">*</span></label>
+          <select formControlName="id_rol"
                   class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
-            <option value="">Seleccione…</option>
-            <option *ngFor="let p of perfiles" [value]="p._json">
-              {{ p.nombre }} (Rol {{ p.rol }})
+            <option value="">Seleccionar rol…</option>
+            <option *ngFor="let r of roles" [value]="r.id_rol">
+              {{ r.nombre_rol }}
             </option>
           </select>
-          <p class="mt-1 text-xs text-textc-mute">Campo obligatorio.</p>
         </div>
 
         <!-- Formulario -->
         <div>
           <label class="block text-sm mb-1">Formulario <span class="text-brand-500">*</span></label>
-          <select formControlName="codigoFormulario"
-                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
-            <option value="">Seleccione…</option>
-            <option *ngFor="let f of formularios" [value]="f.CODIGO_FORMULARIO">
-              {{ f.TITULO_FORMULARIO || f.CODIGO_FORMULARIO }}
+          <select formControlName="id_formulario"
+                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+                  [disabled]="loadingFormularios">
+            <option value="">{{ loadingFormularios ? 'Cargando formularios...' : 'Seleccionar formulario…' }}</option>
+            <option *ngFor="let f of formularios" [value]="f.id_formulario">
+              {{ f.titulo_formulario }}
+              <span *ngIf="f.is_padre" class="text-textc-mute"> (Padre)</span>
+              <span *ngIf="f.padre_id" class="text-textc-mute"> (Hijo)</span>
             </option>
           </select>
-          <p class="mt-1 text-xs text-textc-mute">Campo obligatorio.</p>
-        </div>
-      </div>
-
-      <!-- Acciones (chips con check) -->
-      <div>
-        <div class="text-sm mb-2 text-textc-mute">Acciones permitidas</div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <!-- LEER -->
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeLeer === 'S'"
-                   (change)="toggle('puedeLeer', $event)">
-            <div
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
-                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
-              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
-              <span>Puedes leer</span>
-            </div>
-          </label>
-
-          <!-- CREAR -->
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeCrear === 'S'"
-                   (change)="toggle('puedeCrear', $event)">
-            <div
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
-                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
-              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
-              <span>Puedes crear</span>
-            </div>
-          </label>
-
-          <!-- ACTUALIZAR -->
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeActualizar === 'S'"
-                   (change)="toggle('puedeActualizar', $event)">
-            <div
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
-                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
-              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
-              <span>Puedes actualizar</span>
-            </div>
-          </label>
-
-          <!-- ELIMINAR -->
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer hidden" [checked]="form.value.puedeEliminar === 'S'"
-                   (change)="toggle('puedeEliminar', $event)">
-            <div
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-surface-900 px-3 py-2 text-sm
-                     peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-500 transition">
-              <span class="inline-block h-2 w-2 rounded-full bg-white/30 peer-checked:bg-brand-500"></span>
-              <span>Puedes eliminar</span>
-            </div>
-          </label>
+          <p *ngIf="!loadingFormularios && formularios.length === 0" class="mt-1 text-xs text-yellow-400">
+            ⚠️ No hay formularios disponibles. Asegúrate de que existan formularios en la base de datos.
+          </p>
+          <p *ngIf="formularios.length > 0" class="mt-1 text-xs text-textc-mute">
+            {{ formularios.length }} formulario(s) disponible(s)
+          </p>
         </div>
       </div>
 
@@ -114,10 +77,85 @@
     </form>
   </section>
 
-  <!-- Card: Listado -->
+  <!-- Card: Asignación masiva (bulk) -->
+  <section class="mx-auto w-full max-w-4xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignación masiva</h3>
+    <p class="text-sm text-textc-mute mb-4">
+      <strong>¿Qué es esto?</strong> En lugar de asignar un formulario a la vez, puedes seleccionar un rol y marcar varios formularios 
+      para asignarlos todos de una sola vez. Útil cuando quieres dar acceso a múltiples formularios a un rol específico.
+      <br><strong>Ejemplo:</strong> Seleccionas "Vendedor" y marcas "Ventas", "Productos" y "Clientes" → se asignan los 3 formularios al rol "Vendedor" de una vez.
+    </p>
+
+    <div class="space-y-4">
+      <!-- Selección de rol -->
+      <div>
+        <label class="block text-sm mb-1">Rol <span class="text-brand-500">*</span></label>
+        <select [value]="form.value.id_rol || ''"
+                (change)="form.patchValue({ id_rol: $any($event.target).value })"
+                class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
+          <option value="">Seleccionar rol…</option>
+          <option *ngFor="let r of roles" [value]="r.id_rol">
+            {{ r.nombre_rol }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Lista de formularios con checkboxes -->
+      <div *ngIf="form.value.id_rol && !loadingFormularios && formularios.length > 0" 
+           class="max-h-64 overflow-y-auto border border-white/10 rounded-xl p-4 space-y-2">
+        <div *ngFor="let f of formularios" class="flex items-center gap-3 py-1">
+          <input type="checkbox"
+                 [checked]="estaSeleccionadoBulk(f.id_formulario)"
+                 (change)="toggleFormularioBulk(f.id_formulario)"
+                 [disabled]="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
+                 class="w-4 h-4 rounded border-white/20 bg-surface-900 text-brand-500 focus:ring-brand-500 cursor-pointer">
+          <label class="flex-1 cursor-pointer">
+            <span class="font-medium">{{ f.titulo_formulario }}</span>
+            <span *ngIf="f.is_padre" class="text-xs text-blue-400 ml-2">📁 (Padre)</span>
+            <span *ngIf="f.padre_id" class="text-xs text-purple-400 ml-2">📄 (Hijo)</span>
+            <span *ngIf="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
+                  class="text-xs text-green-400 ml-2">✓ Ya asignado</span>
+          </label>
+        </div>
+      </div>
+
+      <div *ngIf="loadingFormularios" class="text-center text-textc-mute py-4">
+        ⏳ Cargando formularios...
+      </div>
+
+      <div *ngIf="!form.value.id_rol && !loadingFormularios" class="text-center text-textc-mute py-4">
+        👆 Selecciona un rol para ver los formularios disponibles
+      </div>
+
+      <div *ngIf="form.value.id_rol && !loadingFormularios && formularios.length === 0" 
+           class="text-center text-yellow-400 py-4 border border-yellow-500/20 rounded-xl bg-yellow-500/10">
+        ⚠️ No hay formularios disponibles en la base de datos.
+      </div>
+
+      <!-- Botón bulk -->
+      <button type="button"
+              [disabled]="saving || !form.value.id_rol || formulariosSeleccionados.size === 0"
+              (click)="submitBulk()"
+              class="w-full rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
+                     font-semibold py-3 hover:bg-brand-500 hover:text-black transition
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
+                     disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ saving ? 'Guardando…' : `Asignar ${formulariosSeleccionados.size} formulario(s)` }}
+      </button>
+    </div>
+  </section>
+
+  <!-- Card: Listado de permisos asignados -->
   <section class="mx-auto w-full max-w-5xl">
     <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
-      <div class="px-6 py-4 border-b border-white/5 font-semibold">Permisos asignados</div>
+      <div class="px-6 py-4 border-b border-white/5 font-semibold flex justify-between items-center">
+        <span>Permisos asignados</span>
+        <button type="button"
+                (click)="loadPermisosAsignados()"
+                class="text-sm text-brand-500 hover:text-brand-400">
+          🔄 Actualizar
+        </button>
+      </div>
 
       <!-- Cargando -->
       <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
@@ -134,28 +172,75 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-surface-900/60">
             <tr class="border-b border-white/5">
-              <th class="px-6 py-3">Perfil</th>
+              <th class="px-6 py-3">Rol</th>
               <th class="px-6 py-3">Formulario</th>
-              <th class="px-6 py-3">Permisos</th>
+              <th class="px-6 py-3">Tipo</th>
+              <th class="px-6 py-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let pm of permisosAsignados" class="border-b border-white/5">
               <td class="px-6 py-3">
-                Perfil {{ pm.ID_PERFIL }} (Rol {{ pm.PERFIL_ROL }})
+                <div class="font-semibold">{{ getNombreRol(pm.id_rol) }}</div>
+                <div class="text-xs text-textc-mute">ID: {{ pm.id_rol }}</div>
               </td>
-              <td class="px-6 py-3">{{ pm.TITULO_FORMULARIO || pm.CODIGO_FORMULARIO }}</td>
               <td class="px-6 py-3">
-                <span *ngIf="pm.PUEDE_CREAR === 'S'">Crear </span>
-                <span *ngIf="pm.PUEDE_LEER === 'S'">Leer </span>
-                <span *ngIf="pm.PUEDE_ACTUALIZAR === 'S'">Actualizar </span>
-                <span *ngIf="pm.PUEDE_ELIMINAR === 'S'">Eliminar </span>
+                <div>{{ pm.titulo_formulario }}</div>
+                <div class="text-xs text-textc-mute">ID: {{ pm.id_formulario }}</div>
+              </td>
+              <td class="px-6 py-3">
+                <span *ngIf="pm.is_padre" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-500/20 text-blue-400">
+                  Padre
+                </span>
+                <span *ngIf="!pm.is_padre && pm.padre_id" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">
+                  Hijo
+                </span>
+                <span *ngIf="!pm.is_padre && !pm.padre_id" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-gray-500/20 text-gray-400">
+                  Independiente
+                </span>
+              </td>
+              <td class="px-6 py-3">
+                <button type="button"
+                        (click)="confirmarEliminar(pm.id_rol, pm.id_formulario)"
+                        class="text-red-400 hover:text-red-300 text-sm">
+                  Eliminar
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
     </div>
   </section>
+
+  <!-- Modal de confirmación -->
+  <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60"></div>
+
+    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+      <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+      <p class="text-sm text-textc-mute mb-4">
+        ¿Estás seguro de eliminar este permiso?
+        <span *ngIf="pendingDelete" class="block mt-2">
+          <strong>Rol:</strong> {{ getNombreRol(pendingDelete.idRol) }}<br>
+          <strong>Formulario:</strong> {{ getNombreFormulario(pendingDelete.idFormulario) }}
+        </span>
+        <span class="block mt-2 text-yellow-400 text-xs">
+          ⚠️ Si el formulario es padre, también se eliminarán todos sus hijos.
+        </span>
+      </p>
+
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button" class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+                (click)="closeConfirm()">
+          Cancelar
+        </button>
+        <button type="button"
+                class="rounded-xl bg-red-500/90 text-black font-semibold px-4 py-2 hover:bg-red-400"
+                (click)="doEliminarConfirmado()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

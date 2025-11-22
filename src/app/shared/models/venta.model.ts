@@ -3,7 +3,13 @@ export interface Venta {
   fecha: string;
   total: number;
   usuario: string;
-  tipo_id?: number; // Opcional, viene del backend pero no se usa en el frontend
+  tipo_id?: number;
+  // Campos de ventas fiadas
+  cliente_desc?: string | null;
+  estado?: 'PENDIENTE' | 'PAGADA' | 'CANCELADA';
+  saldo_pendiente?: number;
+  es_fiado?: boolean;
+  observaciones?: string | null;
 }
 
 export interface VentaDetalleItem {
