@@ -43,6 +43,21 @@ export class Permisos implements OnInit {
 
   // Para asignación bulk
   formulariosSeleccionados: Set<number> = new Set();
+  
+  // Agrupar formularios por padre
+  get formulariosAgrupados() {
+    const padres = this.formularios.filter(f => f.is_padre);
+    const hijos = this.formularios.filter(f => f.padre_id);
+    const independientes = this.formularios.filter(f => !f.is_padre && !f.padre_id);
+    
+    return {
+      padres: padres.map(p => ({
+        ...p,
+        hijos: hijos.filter(h => h.padre_id === p.id_formulario)
+      })),
+      independientes
+    };
+  }
 
   // Confirmación de eliminación
   confirmOpen = false;
@@ -50,7 +65,6 @@ export class Permisos implements OnInit {
 
   form = this.fb.nonNullable.group({
     id_rol: ['', [Validators.required]],
-    id_formulario: ['', [Validators.required]],
   });
 
   ngOnInit(): void {
@@ -139,50 +153,7 @@ export class Permisos implements OnInit {
     return this.permisosAsignados.filter(p => p.id_rol === idRol);
   }
 
-  // ---------- Formulario ----------
-  submit() {
-    if (this.saving) return;
-
-    const idRol = Number(this.form.value.id_rol);
-    const idFormulario = Number(this.form.value.id_formulario);
-
-    if (!idRol || idRol <= 0) {
-      return this.showInline('Debes seleccionar un rol.');
-    }
-    if (!idFormulario || idFormulario <= 0) {
-      return this.showInline('Debes seleccionar un formulario.');
-    }
-
-    // Verificar si ya existe
-    if (this.tienePermiso(idRol, idFormulario)) {
-      return this.showInline('Este permiso ya está asignado.');
-    }
-
-    this.saving = true;
-    this.okMsg = '';
-    this.errorMsg = '';
-    this.errorMsgInline = '';
-
-    this.permisosSrv.asignar({ id_rol: idRol, id_formulario: idFormulario })
-      .pipe(finalize(() => { this.saving = false; }))
-      .subscribe({
-        next: (res) => {
-          let mensaje = res?.message || 'Permiso asignado correctamente.';
-          if (res?.asignadoTambien) {
-            mensaje += ` ${res.asignadoTambien}`;
-          }
-          this.showOk(mensaje);
-          this.loadPermisosAsignados();
-          this.resetForm();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        },
-        error: (e) => {
-          this.showError(e?.error?.message || 'Error al asignar permiso.');
-        }
-      });
-  }
-
-  // ---------- Asignación Bulk ----------
+  // ---------- Asignación de permisos ----------
   toggleFormularioBulk(idFormulario: number) {
     if (this.formulariosSeleccionados.has(idFormulario)) {
       this.formulariosSeleccionados.delete(idFormulario);
@@ -207,7 +178,22 @@ export class Permisos implements OnInit {
       return this.showInline('Debes seleccionar al menos un formulario.');
     }
 
-    const idFormularios = Array.from(this.formulariosSeleccionados);
+    // Validar que no se hayan seleccionado solo padres sin hijos
+    const formulariosSeleccionadosArray = Array.from(this.formulariosSeleccionados);
+    const padresSeleccionados = formulariosSeleccionadosArray.filter(id => {
+      const form = this.formularios.find(f => f.id_formulario === id);
+      return form?.is_padre;
+    });
+
+    if (padresSeleccionados.length > 0) {
+      const nombresPadres = padresSeleccionados.map(id => {
+        const form = this.formularios.find(f => f.id_formulario === id);
+        return form?.titulo_formulario || `ID ${id}`;
+      }).join(', ');
+      return this.showInline(`No puedes asignar solo formularios padre (${nombresPadres}). Debes seleccionar al menos un formulario hijo de cada padre.`);
+    }
+
+    const idFormularios = formulariosSeleccionadosArray;
 
     this.saving = true;
     this.okMsg = '';
@@ -287,7 +273,6 @@ export class Permisos implements OnInit {
   private resetForm() {
     this.form.reset({
       id_rol: '',
-      id_formulario: '',
     });
     this.formulariosSeleccionados.clear();
   }

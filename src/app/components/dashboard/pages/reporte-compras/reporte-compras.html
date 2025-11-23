@@ -1,0 +1,290 @@
+<div class="space-y-6">
+  <h2 class="text-2xl font-bold text-center">Reporte de Compras</h2>
+
+  <!-- Mensaje de error -->
+  <div
+    *ngIf="errorMsg"
+    class="mx-auto w-full max-w-6xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center"
+  >
+    {{ errorMsg }}
+  </div>
+
+  <!-- Mensaje de error de fechas -->
+  <div
+    *ngIf="errorFecha"
+    class="mx-auto w-full max-w-6xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center"
+  >
+    {{ errorFecha }}
+  </div>
+
+  <!-- Filtros -->
+  <section
+    class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+  >
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">Filtros</h3>
+
+    <form [formGroup]="form" (ngSubmit)="cargarReporte()" class="space-y-4">
+      <!-- Layout cuando NO es personalizado -->
+      <div *ngIf="form.get('periodo')?.value !== 'personalizado'" class="flex flex-col items-center gap-4">
+        <div class="w-full max-w-md">
+          <label class="block text-sm mb-2">Período</label>
+          <select
+            formControlName="periodo"
+            (change)="onPeriodoChange()"
+            class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-2 outline-none focus:border-brand-500"
+          >
+            <option *ngFor="let p of periodos" [value]="p.value">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="w-full max-w-md flex gap-2">
+          <button
+            type="submit"
+            [disabled]="loading"
+            class="flex-1 rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ loading ? 'Cargando...' : 'Cargar Datos' }}
+          </button>
+          <button
+            type="button"
+            (click)="exportarAExcel()"
+            [disabled]="!datos || loading"
+            class="flex-1 rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Exportar Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Layout cuando SÍ es personalizado -->
+      <div *ngIf="form.get('periodo')?.value === 'personalizado'" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <!-- Período -->
+        <div>
+          <label class="block text-sm mb-2">Período</label>
+          <select
+            formControlName="periodo"
+            (change)="onPeriodoChange()"
+            class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-2 outline-none focus:border-brand-500"
+          >
+            <option *ngFor="let p of periodos" [value]="p.value">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Fecha inicio -->
+        <div>
+          <label class="block text-sm mb-2">Fecha inicio</label>
+          <input
+            type="date"
+            formControlName="fecha_inicio"
+            (change)="onFechaChange()"
+            class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-2 outline-none focus:border-brand-500"
+            [class.border-red-500]="form.get('fecha_inicio')?.invalid && form.get('fecha_inicio')?.touched"
+          />
+        </div>
+
+        <!-- Fecha fin -->
+        <div>
+          <label class="block text-sm mb-2">Fecha fin</label>
+          <input
+            type="date"
+            formControlName="fecha_fin"
+            (change)="onFechaChange()"
+            [min]="form.get('fecha_inicio')?.value"
+            class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-2 outline-none focus:border-brand-500"
+            [class.border-red-500]="form.get('fecha_fin')?.invalid && form.get('fecha_fin')?.touched"
+          />
+        </div>
+
+        <!-- Botones -->
+        <div class="flex items-end gap-2">
+          <button
+            type="submit"
+            [disabled]="loading || errorFecha !== '' || (!form.get('fecha_inicio')?.value || !form.get('fecha_fin')?.value || form.get('fecha_fin')?.hasError('fechaAnterior'))"
+            class="flex-1 rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ loading ? 'Cargando...' : 'Cargar Datos' }}
+          </button>
+          <button
+            type="button"
+            (click)="exportarAExcel()"
+            [disabled]="!datos || loading"
+            class="flex-1 rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Exportar Excel
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Resultados -->
+  <div *ngIf="datos && !loading" class="space-y-6">
+    <!-- Resumen -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Resumen General</h3>
+
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Total Compras</div>
+          <div class="text-2xl font-bold text-brand-500">
+            {{ datos.resumen.total_compras | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Cantidad de Compras</div>
+          <div class="text-2xl font-bold">{{ datos.resumen.cantidad_compras }}</div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Compra Promedio</div>
+          <div class="text-2xl font-bold">
+            {{ datos.resumen.compra_promedio | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Período</div>
+          <div class="text-lg font-semibold">
+            {{ formatearFecha(datos.periodo.fecha_inicio) }} - {{ formatearFecha(datos.periodo.fecha_fin) }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compras por día -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-brand-500">Compras por Día</h3>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-textc-mute">Mostrar:</label>
+          <select
+            [(ngModel)]="vistaComprasPorDia"
+            class="rounded-lg bg-surface-900 border border-white/10 px-3 py-1 text-sm outline-none focus:border-brand-500"
+          >
+            <option value="con-compras">Solo días con compras</option>
+            <option value="todas">Todos los días</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="comprasPorDiaFiltradas.length === 0" class="text-center py-8 text-textc-mute">
+        No hay compras en el período seleccionado
+      </div>
+
+      <div *ngIf="comprasPorDiaFiltradas.length > 0" class="overflow-x-auto">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="text-left py-3 px-4 text-sm font-semibold">Fecha</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Cantidad</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let dia of comprasPorDiaFiltradas"
+              class="border-b border-white/5 hover:bg-surface-900/50"
+            >
+              <td class="py-3 px-4">{{ formatearFecha(dia.fecha) }}</td>
+              <td class="py-3 px-4 text-center">{{ dia.cantidad }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
+                {{ dia.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Productos más comprados -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Top 5 Productos Más Comprados</h3>
+
+      <div class="overflow-x-auto">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="text-left py-3 px-4 text-sm font-semibold">Producto</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Unidades</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let producto of datos.productos_mas_comprados"
+              class="border-b border-white/5 hover:bg-surface-900/50"
+            >
+              <td class="py-3 px-4">{{ producto.nombre }}</td>
+              <td class="py-3 px-4 text-center">{{ producto.unidades }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
+                {{ producto.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Compras por usuario -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Compras por Usuario</h3>
+
+      <div class="overflow-x-auto">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="text-left py-3 px-4 text-sm font-semibold">Usuario</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Cantidad Compras</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total Comprado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let usuario of datos.usuarios"
+              class="border-b border-white/5 hover:bg-surface-900/50"
+            >
+              <td class="py-3 px-4">{{ usuario.nombre }}</td>
+              <td class="py-3 px-4 text-center">{{ usuario.compras }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
+                {{ usuario.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-12">
+    <div class="text-textc-mute">Cargando reporte...</div>
+  </div>
+</div>
