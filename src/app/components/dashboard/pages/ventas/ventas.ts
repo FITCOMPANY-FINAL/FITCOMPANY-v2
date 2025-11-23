@@ -53,6 +53,10 @@ export class Ventas implements OnInit {
   mostrarEliminadas = false;
   rowsOriginales: Venta[] = [];
 
+  // Caché de abonos para tooltips
+  abonosCache: Map<number, any[]> = new Map();
+  cargandoAbonos: Map<number, boolean> = new Map();
+
   private static readonly LIMITE_CANTIDAD = 6;
   private static readonly TOPE_TOTAL = 99_999_999;
   private static readonly MAX_ITEMS = 200;
@@ -608,5 +612,39 @@ export class Ventas implements OnInit {
     if (abonoRegistrado) {
       this.loadRows();
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📋 HISTORIAL DE ABONOS EN HOVER (TOOLTIP)
+  // ═══════════════════════════════════════════════════════════
+
+  onMouseEnterAbonos(idVenta: number): void {
+    // Si ya está en cache, no hacer nada (ya se cargó)
+    if (this.abonosCache.has(idVenta)) return;
+
+    // Marcar como cargando
+    this.cargandoAbonos.set(idVenta, true);
+
+    // Llamar al servicio para obtener abonos
+    this.ventasSrv.obtenerAbonos(idVenta).subscribe({
+      next: (res: any) => {
+        // Guardar los abonos en cache
+        this.abonosCache.set(idVenta, res.abonos || []);
+        this.cargandoAbonos.set(idVenta, false);
+      },
+      error: (err) => {
+        console.error('Error al cargar abonos:', err);
+        this.abonosCache.set(idVenta, []);
+        this.cargandoAbonos.set(idVenta, false);
+      },
+    });
+  }
+
+  getAbonos(idVenta: number): any[] {
+    return this.abonosCache.get(idVenta) || [];
+  }
+
+  isCarandoAbonos(idVenta: number): boolean {
+    return this.cargandoAbonos.get(idVenta) || false;
   }
 }
