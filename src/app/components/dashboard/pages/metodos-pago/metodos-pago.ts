@@ -9,7 +9,7 @@ import { MetodosPagoService, MetodoPago } from '../../../../shared/services/meto
   selector: 'app-metodos-pago',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './metodos-pago.html',
-  styleUrl: './metodos-pago.scss'
+  styleUrl: './metodos-pago.scss',
 })
 export class MetodosPago implements OnInit {
   private fb = inject(FormBuilder);
@@ -26,7 +26,6 @@ export class MetodosPago implements OnInit {
   form = this.fb.nonNullable.group({
     nombre_metodo_pago: ['', [Validators.required, Validators.maxLength(100)]],
     descripcion_metodo_pago: ['', [Validators.maxLength(255)]],
-    activo: [true]
   });
 
   // Edición
@@ -63,8 +62,15 @@ export class MetodosPago implements OnInit {
   loadData() {
     this.loadingList = true;
     this.metodosPagoSrv.listar().subscribe({
-      next: (rows) => { this.rows = rows || []; this.loadingList = false; },
-      error: () => { this.rows = []; this.loadingList = false; this.showError('Error cargando métodos de pago'); }
+      next: (rows) => {
+        this.rows = rows || [];
+        this.loadingList = false;
+      },
+      error: () => {
+        this.rows = [];
+        this.loadingList = false;
+        this.showError('Error cargando métodos de pago');
+      },
     });
   }
 
@@ -74,12 +80,13 @@ export class MetodosPago implements OnInit {
 
     // sanitizar
     const nombre = (this.form.value.nombre_metodo_pago || '').trim().replace(/\s+/g, ' ');
-    const desc   = (this.form.value.descripcion_metodo_pago || '').trim().replace(/\s+/g, ' ');
+    const desc = (this.form.value.descripcion_metodo_pago || '').trim().replace(/\s+/g, ' ');
 
     // validaciones
     if (!nombre) return this.showError('El nombre es obligatorio.');
     const PATRON = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\-.]+$/;
-    if (!PATRON.test(nombre)) return this.showError('El nombre solo puede contener letras, espacios, guiones y puntos.');
+    if (!PATRON.test(nombre))
+      return this.showError('El nombre solo puede contener letras, espacios, guiones y puntos.');
     if (nombre.length > 100) return this.showError('El nombre admite máximo 100 caracteres.');
     if (desc.length > 200) return this.showError('La descripción admite máximo 200 caracteres.');
 
@@ -87,29 +94,33 @@ export class MetodosPago implements OnInit {
     this.okMsg = '';
     this.errorMsg = '';
 
-    const body = {
-      nombre_metodo_pago: nombre,
-      descripcion_metodo_pago: desc,
-      activo: this.form.value.activo ?? true
-    };
-    const req$ = (this.editando && this.editId != null)
-      ? this.metodosPagoSrv.actualizar(this.editId, body)
-      : this.metodosPagoSrv.crear(body);
+    const body = { nombre_metodo_pago: nombre, descripcion_metodo_pago: desc };
+    const req$ =
+      this.editando && this.editId != null
+        ? this.metodosPagoSrv.actualizar(this.editId, body)
+        : this.metodosPagoSrv.crear(body);
 
     req$
-      .pipe(finalize(() => { this.saving = false; }))
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+        }),
+      )
       .subscribe({
         next: (res) => {
-          this.showOk(res?.message || (this.editando ? 'Método de pago actualizado.' : 'Método de pago creado.'));
+          this.showOk(
+            res?.message ||
+              (this.editando ? 'Método de pago actualizado.' : 'Método de pago creado.'),
+          );
           this.loadData();
           this.editando = false;
           this.editId = null;
-          this.form.reset({ nombre_metodo_pago: '', descripcion_metodo_pago: '', activo: true });
+          this.form.reset({ nombre_metodo_pago: '', descripcion_metodo_pago: '' });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
           this.showError(e?.error?.message || 'Error al guardar el método de pago.');
-        }
+        },
       });
   }
 
@@ -120,7 +131,6 @@ export class MetodosPago implements OnInit {
     this.form.patchValue({
       nombre_metodo_pago: m.nombre_metodo_pago ?? '',
       descripcion_metodo_pago: m.descripcion_metodo_pago ?? '',
-      activo: m.activo ?? true
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -128,7 +138,7 @@ export class MetodosPago implements OnInit {
   cancelarEdicion() {
     this.editando = false;
     this.editId = null;
-    this.form.reset({ nombre_metodo_pago: '', descripcion_metodo_pago: '', activo: true });
+    this.form.reset({ nombre_metodo_pago: '', descripcion_metodo_pago: '' });
   }
 
   // --- confirmación estilizada ---
@@ -143,7 +153,10 @@ export class MetodosPago implements OnInit {
   }
 
   doEliminarConfirmado() {
-    if (this.pendingDeleteId == null) { this.closeConfirm(); return; }
+    if (this.pendingDeleteId == null) {
+      this.closeConfirm();
+      return;
+    }
     const id = this.pendingDeleteId;
 
     // cerramos modal y limpiamos id pendiente
@@ -157,7 +170,7 @@ export class MetodosPago implements OnInit {
       },
       error: (e) => {
         this.showError(e?.error?.message || 'Error eliminando el método de pago.');
-      }
+      },
     });
   }
 }
