@@ -92,6 +92,13 @@ export const routes: Routes = [
             (m) => m.ReporteInventario,
           ),
       },
+      {
+        path: 'metodos-pago',
+        loadComponent: () =>
+          import('./components/dashboard/pages/metodos-pago/metodos-pago').then(
+            (m) => m.MetodosPago,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
     ],
   },

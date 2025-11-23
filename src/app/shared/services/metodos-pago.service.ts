@@ -19,5 +19,16 @@ export class MetodosPagoService {
   listar(): Observable<MetodoPago[]> {
     return this.http.get<MetodoPago[]>(this.base);
   }
-}
 
+  crear(body: Partial<MetodoPago>) {
+    return this.http.post<{ message: string }>(this.base, body);
+  }
+
+  actualizar(id_metodo_pago: number, body: Partial<MetodoPago>) {
+    return this.http.put<{ message: string }>(`${this.base}/${id_metodo_pago}`, body);
+  }
+
+  eliminar(id_metodo_pago: number) {
+    return this.http.delete<{ message: string }>(`${this.base}/${id_metodo_pago}`);
+  }
+}
