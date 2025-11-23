@@ -15,6 +15,9 @@ export interface Venta {
   activo?: boolean;
   eliminado_en?: string | null;
   eliminado_por?: string | null;
+  // Campos de productos vendidos
+  productos?: string[]; // Array de productos: ["Creatina (x1)", "Proteína (x2)"]
+  total_productos?: number; // Total de productos vendidos
 }
 
 export interface VentaDetalleItem {

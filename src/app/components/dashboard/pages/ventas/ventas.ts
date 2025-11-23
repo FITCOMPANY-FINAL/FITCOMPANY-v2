@@ -507,4 +507,23 @@ export class Ventas implements OnInit {
     this.agregarLinea();
     this.clearViolations();
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📦 HELPERS PARA PRODUCTOS EN TABLA
+  // ═══════════════════════════════════════════════════════════
+
+  getPrimerosProductos(venta: Venta): string {
+    if (!venta.productos || venta.productos.length === 0) return '-';
+    return venta.productos.slice(0, 2).join(', ');
+  }
+
+  getProductosAdicionales(venta: Venta): number {
+    if (!venta.productos || venta.productos.length <= 2) return 0;
+    return venta.productos.length - 2;
+  }
+
+  getProductosCompletos(venta: Venta): string {
+    if (!venta.productos || venta.productos.length === 0) return 'Sin productos';
+    return venta.productos.map((p) => `• ${p}`).join('\n');
+  }
 }

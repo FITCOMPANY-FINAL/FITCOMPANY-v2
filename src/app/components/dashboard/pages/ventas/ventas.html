@@ -223,6 +223,7 @@
                     <thead class="bg-surface-900/60">
                         <tr class="border-b border-white/5">
                             <th class="px-4 py-3">Folio</th>
+                            <th class="px-4 py-3">Productos</th>
                             <th class="px-4 py-3">Fecha</th>
                             <th class="px-4 py-3 text-right">Total</th>
                             <th class="px-4 py-3">Estado</th>
@@ -236,6 +237,28 @@
                             [class.bg-yellow-500/5]="r.es_fiado && r.estado === 'PENDIENTE'">
                             <td class="px-4 py-3">
                                 <span class="font-mono text-xs text-brand-400">{{ r.folio }}</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <div class="relative group inline-block">
+                                    <span class="text-gray-300">{{ getPrimerosProductos(r) }}</span>
+                                    <span *ngIf="getProductosAdicionales(r) > 0"
+                                          class="ml-1 px-2 py-0.5 bg-brand-500/20 text-brand-400 rounded text-xs cursor-help">
+                                        +{{ getProductosAdicionales(r) }} más
+                                    </span>
+                                    <!-- Tooltip elegante -->
+                                    <div *ngIf="getProductosAdicionales(r) > 0"
+                                         class="absolute left-0 top-full mt-2 w-64 p-3 rounded-lg bg-surface-900
+                                                border border-brand-500/30 shadow-2xl opacity-0 invisible
+                                                group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50
+                                                pointer-events-none">
+                                        <div class="text-xs font-semibold text-brand-400 mb-2">
+                                            Todos los productos ({{ r.total_productos }})
+                                        </div>
+                                        <div class="text-xs text-gray-300 whitespace-pre-line leading-relaxed">
+                                            {{ getProductosCompletos(r) }}
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-400">{{ r.fecha | date:'dd/MM/yy HH:mm' }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
