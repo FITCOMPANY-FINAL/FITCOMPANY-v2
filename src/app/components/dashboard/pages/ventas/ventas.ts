@@ -1,23 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  Validators,
-  FormArray,
-  FormGroup,
-} from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { VentasService } from '../../../../shared/services/ventas.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
 import { MetodosPagoService, MetodoPago } from '../../../../shared/services/metodos-pago.service';
 import { Venta } from '../../../../shared/models/venta.model';
 import { Producto } from '../../../../shared/models/producto.model';
+import { AbonosModalComponent } from '../../modals/abonos-modal/abonos-modal.component';
 
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AbonosModalComponent],
   templateUrl: './ventas.html',
   styleUrl: './ventas.scss',
 })
@@ -41,6 +36,10 @@ export class Ventas implements OnInit {
 
   confirmOpen = false;
   private pendingDeleteId: number | null = null;
+
+  // Modal de abonos
+  mostrarModalAbonos = false;
+  ventaSeleccionada: Venta | null = null;
 
   private static readonly LIMITE_CANTIDAD = 6;
   private static readonly TOPE_TOTAL = 99_999_999;
@@ -77,10 +76,19 @@ export class Ventas implements OnInit {
   }
 
   // ---------- máscara ----------
-  private onlyDigits(s: string) { return (s || '').replace(/\D/g, ''); }
-  private clampDigits(s: string, maxLen: number) { return this.onlyDigits(s).slice(0, maxLen); }
-  private withThousands(digits: string) { return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-  private unmask(v: unknown): number { const d = (v ?? '').toString().replace(/\D/g, ''); return d ? Number(d) : 0; }
+  private onlyDigits(s: string) {
+    return (s || '').replace(/\D/g, '');
+  }
+  private clampDigits(s: string, maxLen: number) {
+    return this.onlyDigits(s).slice(0, maxLen);
+  }
+  private withThousands(digits: string) {
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+  private unmask(v: unknown): number {
+    const d = (v ?? '').toString().replace(/\D/g, '');
+    return d ? Number(d) : 0;
+  }
 
   onBeforeInputDigits(ev: InputEvent, idx: number, maxLen: number) {
     const it = ev.inputType || '';
@@ -125,22 +133,22 @@ export class Ventas implements OnInit {
   // ---------- productos / data ----------
   loadProductos() {
     this.productosSrv.listar().subscribe({
-      next: (rows) => this.productos = rows || [],
-      error: () => this.productos = [],
+      next: (rows) => (this.productos = rows || []),
+      error: () => (this.productos = []),
     });
   }
 
   loadMetodosPago() {
     this.metodosPagoSrv.listar().subscribe({
-      next: (rows) => this.metodosPago = rows || [],
-      error: () => this.metodosPago = [],
+      next: (rows) => (this.metodosPago = rows || []),
+      error: () => (this.metodosPago = []),
     });
   }
 
   loadRows() {
     this.ventasSrv.listar().subscribe({
-      next: (rows) => this.rows = rows || [],
-      error: () => this.rows = [],
+      next: (rows) => (this.rows = rows || []),
+      error: () => (this.rows = []),
     });
   }
 
@@ -192,7 +200,7 @@ export class Ventas implements OnInit {
       return;
     }
 
-    const p = this.productos.find(pp => Number(pp.id_producto) === idSel);
+    const p = this.productos.find((pp) => Number(pp.id_producto) === idSel);
     // El backend puede devolver precio_unitario o precio_venta
     const precio = Number((p as any)?.precio_unitario ?? (p as any)?.precio_venta ?? 0);
     ctrl.get('precioUnit')?.setValue(precio);
@@ -201,14 +209,14 @@ export class Ventas implements OnInit {
   subtotal(i: number): number {
     const g = this.lineas.at(i);
     const qty = this.unmask(g.get('cantidad')?.value);
-    const pu  = Number(g.get('precioUnit')?.value || 0);
+    const pu = Number(g.get('precioUnit')?.value || 0);
     return qty * pu;
   }
 
   get total(): number {
     return this.lineas.controls.reduce((acc, g) => {
       const qty = this.unmask(g.get('cantidad')?.value);
-      const pu  = Number(g.get('precioUnit')?.value || 0);
+      const pu = Number(g.get('precioUnit')?.value || 0);
       return acc + qty * pu;
     }, 0);
   }
@@ -274,10 +282,21 @@ export class Ventas implements OnInit {
 
   // ---------- mensajes ----------
   private autoHide(ms = 4000) {
-    window.setTimeout(() => { this.okMsg = ''; this.errorMsg = ''; }, ms);
+    window.setTimeout(() => {
+      this.okMsg = '';
+      this.errorMsg = '';
+    }, ms);
   }
-  private showOk(msg: string) { this.okMsg = msg; this.errorMsg = ''; this.autoHide(); }
-  private showError(msg: string) { this.errorMsg = msg; this.okMsg = ''; this.autoHide(); }
+  private showOk(msg: string) {
+    this.okMsg = msg;
+    this.errorMsg = '';
+    this.autoHide();
+  }
+  private showError(msg: string) {
+    this.errorMsg = msg;
+    this.okMsg = '';
+    this.autoHide();
+  }
 
   private clearViolations() {
     if (this.violTimer) clearTimeout(this.violTimer);
@@ -302,14 +321,17 @@ export class Ventas implements OnInit {
       const g = this.lineas.at(i);
       const idp = Number(g.get('producto')?.value);
       const qty = this.unmask(g.get('cantidad')?.value);
-      const pu  = Number(g.get('precioUnit')?.value || 0);
+      const pu = Number(g.get('precioUnit')?.value || 0);
 
       if (!idp) return `Debes seleccionar el producto en la fila #${i + 1}.`;
-      if (seen.has(idp)) return `El producto de la fila #${i + 1} ya fue seleccionado en otra fila.`;
+      if (seen.has(idp))
+        return `El producto de la fila #${i + 1} ya fue seleccionado en otra fila.`;
       seen.add(idp);
 
-      if (!(qty >= 1 && qty <= 999_999)) return `La cantidad de la fila #${i + 1} debe estar entre 1 y 999.999.`;
-      if (!(pu >= 1 && pu <= 99_999_999)) return `El precio unitario de la fila #${i + 1} debe estar entre 1 y 99.999.999.`;
+      if (!(qty >= 1 && qty <= 999_999))
+        return `La cantidad de la fila #${i + 1} debe estar entre 1 y 999.999.`;
+      if (!(pu >= 1 && pu <= 99_999_999))
+        return `El precio unitario de la fila #${i + 1} debe estar entre 1 y 99.999.999.`;
     }
 
     const tot = this.total;
@@ -324,7 +346,8 @@ export class Ventas implements OnInit {
       const monto = this.unmask(g.get('monto')?.value);
 
       if (!idMetodo) return `Debes seleccionar el método de pago en la fila #${i + 1}.`;
-      if (!(monto >= 1 && monto <= 99_999_999)) return `El monto del pago #${i + 1} debe estar entre 1 y 99.999.999.`;
+      if (!(monto >= 1 && monto <= 99_999_999))
+        return `El monto del pago #${i + 1} debe estar entre 1 y 99.999.999.`;
     }
 
     // Validar que si es venta fiada, cliente_desc es obligatorio
@@ -346,34 +369,57 @@ export class Ventas implements OnInit {
     if (this.saving) return;
 
     const msg = this.validar();
-    if (msg) { this.showError(`❌ ${msg}`); return; }
+    if (msg) {
+      this.showError(`❌ ${msg}`);
+      return;
+    }
 
-    const productos = this.lineas.controls.map(g => ({
+    const detalles = this.lineas.controls.map((g) => ({
       id_producto: Number(g.get('producto')?.value),
       cantidad: this.unmask(g.get('cantidad')?.value),
       precio_unitario: Number(g.get('precioUnit')?.value || 0),
     }));
 
-    const pagos = this.pagos.length > 0 ? this.pagos.controls.map(g => ({
-      id_metodo_pago: Number(g.get('id_metodo_pago')?.value),
-      monto: this.unmask(g.get('monto')?.value),
-      observaciones: (g.get('observaciones')?.value || '').trim() || null,
-    })) : undefined;
+    const pagos =
+      this.pagos.length > 0
+        ? this.pagos.controls.map((g) => ({
+            id_metodo_pago: Number(g.get('id_metodo_pago')?.value),
+            monto: this.unmask(g.get('monto')?.value),
+            observaciones: (g.get('observaciones')?.value || '').trim() || null,
+          }))
+        : undefined;
 
-    const clienteDesc = this.esVentaFiada ? (this.form.get('cliente_desc')?.value || '').trim() || null : null;
+    const clienteDesc = this.esVentaFiada
+      ? (this.form.get('cliente_desc')?.value || '').trim() || null
+      : null;
     const observaciones = (this.form.get('observaciones')?.value || '').trim() || null;
     const fechaVenta = this.form.get('fecha_venta')?.value || undefined;
 
-    const body: any = { productos };
+    const body: any = { detalles };
     if (pagos && pagos.length > 0) body.pagos = pagos;
     if (clienteDesc) body.cliente_desc = clienteDesc;
     if (observaciones) body.observaciones = observaciones;
     if (fechaVenta) body.fecha_venta = fechaVenta;
 
+    // 🔍 DEBUG: Ver qué se está enviando
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 BODY A ENVIAR AL BACKEND:');
+    console.log(JSON.stringify(body, null, 2));
+    console.log('📤 Detalles:', body.detalles);
+    console.log('📤 Es array?', Array.isArray(body.detalles), '| Longitud:', body.detalles?.length);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     this.saving = true;
     this.clearViolations();
 
-    this.ventasSrv.crear(body).pipe(finalize(() => { this.saving = false; this.autoHide(); }))
+    this.ventasSrv
+      .crear(body)
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+          this.autoHide();
+        }),
+      )
       .subscribe({
         next: (res: any) => {
           if (Array.isArray(res?.warnings) && res.warnings.length > 0) {
@@ -400,11 +446,13 @@ export class Ventas implements OnInit {
             this.showError('❌ No se puede registrar la venta: stock insuficiente.');
           } else if (data?.code === 'MIN_STOCK_BREACH' && Array.isArray(data?.violations)) {
             this.setViolations(data.violations, 'Productos bajo el mínimo:');
-            this.showError('❌ No se puede registrar la venta: hay productos que quedarían bajo el mínimo.');
+            this.showError(
+              '❌ No se puede registrar la venta: hay productos que quedarían bajo el mínimo.',
+            );
           } else {
             this.showError(data?.message || data?.raw || 'Error al guardar la venta.');
           }
-        }
+        },
       });
   }
 
@@ -422,7 +470,10 @@ export class Ventas implements OnInit {
     this.pendingDeleteId = null;
   }
   doEliminarConfirmado() {
-    if (this.pendingDeleteId == null) { this.closeConfirm(); return; }
+    if (this.pendingDeleteId == null) {
+      this.closeConfirm();
+      return;
+    }
     const id = this.pendingDeleteId;
     this.closeConfirm();
 
@@ -438,17 +489,18 @@ export class Ventas implements OnInit {
         const data = e?.error || {};
         if (data?.code === 'MAX_STOCK_BREACH' && Array.isArray(data?.violations)) {
           this.setViolations(data.violations, 'Productos que excederían el máximo:');
-          this.showError('❌ No se puede eliminar la venta: los productos listados superarían el stock máximo.');
+          this.showError(
+            '❌ No se puede eliminar la venta: los productos listados superarían el stock máximo.',
+          );
         } else {
           this.showError(data?.message || data?.raw || 'Error al eliminar venta.');
         }
-      }
+      },
     });
   }
 
-
   private resetForm() {
-    this.form.reset({ 
+    this.form.reset({
       lineas: [],
       pagos: [],
       cliente_desc: '',
@@ -459,5 +511,43 @@ export class Ventas implements OnInit {
     this.pagos.clear();
     this.agregarLinea();
     this.clearViolations();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📦 HELPERS PARA PRODUCTOS EN TABLA
+  // ═══════════════════════════════════════════════════════════
+
+  getPrimerosProductos(venta: Venta): string {
+    if (!venta.productos || venta.productos.length === 0) return '-';
+    return venta.productos.slice(0, 2).join(', ');
+  }
+
+  getProductosAdicionales(venta: Venta): number {
+    if (!venta.productos || venta.productos.length <= 2) return 0;
+    return venta.productos.length - 2;
+  }
+
+  getProductosCompletos(venta: Venta): string {
+    if (!venta.productos || venta.productos.length === 0) return 'Sin productos';
+    return venta.productos.map((p) => `• ${p}`).join('\n');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 💰 MODAL DE ABONOS
+  // ═══════════════════════════════════════════════════════════
+
+  abrirModalAbonos(venta: Venta): void {
+    this.ventaSeleccionada = venta;
+    this.mostrarModalAbonos = true;
+  }
+
+  cerrarModalAbonos(abonoRegistrado: boolean): void {
+    this.mostrarModalAbonos = false;
+    this.ventaSeleccionada = null;
+
+    // Si se registró un abono, recargar la tabla para ver los cambios
+    if (abonoRegistrado) {
+      this.loadRows();
+    }
   }
 }
