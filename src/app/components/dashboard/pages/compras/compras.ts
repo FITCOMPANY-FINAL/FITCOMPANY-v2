@@ -444,4 +444,25 @@ export class Compras implements OnInit {
       return fecha;
     }
   }
+
+  // Métodos para el tooltip de productos múltiples
+  getPrimerosProductos(compra: Compra): string {
+    if (!compra.detalles || compra.detalles.length === 0) return '-';
+    return compra.detalles
+      .slice(0, 2)
+      .map((d) => `${d.nombre_producto} (${Math.floor(d.cantidad_detalle_compra || 0)})`)
+      .join(', ');
+  }
+
+  getProductosAdicionales(compra: Compra): number {
+    if (!compra.detalles || compra.detalles.length <= 2) return 0;
+    return compra.detalles.length - 2;
+  }
+
+  getProductosCompletos(compra: Compra): string {
+    if (!compra.detalles || compra.detalles.length === 0) return 'Sin productos';
+    return compra.detalles
+      .map((d) => `• ${d.nombre_producto} (${Math.floor(d.cantidad_detalle_compra || 0)})`)
+      .join('\n');
+  }
 }
