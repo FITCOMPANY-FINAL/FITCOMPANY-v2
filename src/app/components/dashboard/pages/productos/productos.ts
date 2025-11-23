@@ -225,13 +225,13 @@ export class Productos implements OnInit {
     const precioUnitarioRaw = this.form.value.precio_unitario ?? null;
     
     if (precioCostoRaw === null || precioCostoRaw < 0 || precioCostoRaw > 99_999_999) {
-      return this.showInline('El precio de costo debe estar entre 0 y 99.999.999.');
+      return this.showInline('El precio de compra debe estar entre 0 y 99.999.999.');
     }
     if (!precioUnitarioRaw || precioUnitarioRaw < 1 || precioUnitarioRaw > 99_999_999) {
       return this.showInline('El precio de venta debe estar entre 1 y 99.999.999.');
     }
     if (precioUnitarioRaw < precioCostoRaw) {
-      return this.showInline('El precio de venta no puede ser menor que el precio de costo.');
+      return this.showInline('El precio de venta no puede ser menor que el precio de compra.');
     }
     if (!this.form.value.unidad_medida) return this.showInline('Debes seleccionar la unidad de medida.');
     if (!this.form.value.producto_categoria) return this.showInline('Debes seleccionar la categoría.');

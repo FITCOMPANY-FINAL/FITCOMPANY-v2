@@ -1,3 +1,8 @@
+export interface CompraDetalle {
+  nombre_producto: string;
+  cantidad_detalle_compra: number;
+}
+
 export interface Compra {
   id_compra: number;
   fecha_compra: string;
@@ -8,4 +13,5 @@ export interface Compra {
   email_usuario: string;
   abreviatura_tipo_identificacion: string;
   identificacion_usuario: string;
+  detalles?: CompraDetalle[];
 }

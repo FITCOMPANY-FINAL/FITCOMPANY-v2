@@ -8,7 +8,8 @@ import { TokenPayload } from '../../../shared/models/usuario.model';
 interface MenuItem {
   label: string;
   icon: string;
-  link: string;
+  link: string | null; // null si es padre (no tiene link)
+  hijos?: MenuItem[]; // Hijos del menú
 }
 
 // Mapeo de URLs a iconos
@@ -56,30 +57,49 @@ export class Sidebar implements OnInit {
   private loadMenuFromToken() {
     const formularios = this.auth.getFormulariosFromToken();
     
-    // Solo mostrar formularios que tienen URL y NO son padres (solo los hijos/clicables)
-    this.menu = formularios
-      .filter(f => f.url && !f.es_padre)
-      .map(f => {
-        // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
-        let urlPath = f.url?.replace('/dashboard/', '') || '';
-        
-        // Normalizar rutas que pueden tener variaciones
-        if (urlPath === 'unidades-medida') {
-          urlPath = 'unidades-medidas'; // La ruta real en Angular
-        }
-        if (urlPath === 'tipos-identificacion') {
-          urlPath = 'tipos-identificaciones'; // La ruta real en Angular
-        }
-        
-        return {
-          label: f.titulo,
-          icon: this.getIconForUrl(f.url || ''),
-          link: urlPath
-        };
-      })
-      .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar alfabéticamente
+    // Separar padres e hijos
+    const padres = formularios.filter(f => f.es_padre).sort((a, b) => a.orden - b.orden);
+    const hijos = formularios.filter(f => !f.es_padre && f.url);
     
-    console.log('📋 Menú cargado desde JWT:', this.menu.length, 'formularios');
+    // Construir estructura jerárquica
+    this.menu = padres.map(padre => {
+      // Obtener hijos de este padre
+      const hijosDelPadre = hijos
+        .filter(h => h.padre === padre.id)
+        .map(h => {
+          // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
+          let urlPath = h.url?.replace('/dashboard/', '') || '';
+          
+          // Normalizar rutas que pueden tener variaciones
+          if (urlPath === 'unidades-medida') {
+            urlPath = 'unidades-medidas'; // La ruta real en Angular
+          }
+          if (urlPath === 'tipos-identificacion') {
+            urlPath = 'tipos-identificaciones'; // La ruta real en Angular
+          }
+          
+          return {
+            label: h.titulo,
+            icon: this.getIconForUrl(h.url || ''),
+            link: urlPath
+          };
+        })
+        .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
+      
+      // Solo incluir el padre si tiene hijos
+      if (hijosDelPadre.length === 0) {
+        return null;
+      }
+      
+      return {
+        label: padre.titulo,
+        icon: this.getIconForUrl(padre.url || ''),
+        link: null, // Los padres no tienen link
+        hijos: hijosDelPadre
+      };
+    }).filter(item => item !== null) as MenuItem[];
+    
+    console.log('📋 Menú cargado desde JWT:', this.menu.length, 'padres con sus hijos');
   }
 
   private getIconForUrl(url: string): string {
@@ -100,7 +120,7 @@ export class Sidebar implements OnInit {
     if (url.includes('permiso')) return 'ShieldCheck';
     if (url.includes('identificacion') || url.includes('tipo')) return 'Fingerprint';
     
-    return 'FileText'; // Icono por defecto
+    return 'Box'; // Icono por defecto (usando uno que sabemos que está disponible)
   }
 
   private loadUserInfo() {

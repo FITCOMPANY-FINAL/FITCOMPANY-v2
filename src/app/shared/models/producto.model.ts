@@ -3,6 +3,7 @@ export interface Producto {
   nombre_producto: string;
   descripcion_producto?: string;
   precio_unitario: number;
+  precio_costo?: number; // Precio de compra del producto
   stock_actual: number;
   stock_minimo: number;
   stock_maximo: number;
