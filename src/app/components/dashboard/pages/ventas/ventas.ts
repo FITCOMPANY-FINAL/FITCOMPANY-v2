@@ -1,6 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormsModule,
+  FormBuilder,
+  Validators,
+  FormArray,
+  FormGroup,
+} from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { VentasService } from '../../../../shared/services/ventas.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
@@ -12,7 +19,7 @@ import { AbonosModalComponent } from '../../modals/abonos-modal/abonos-modal.com
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AbonosModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AbonosModalComponent],
   templateUrl: './ventas.html',
   styleUrl: './ventas.scss',
 })
@@ -36,10 +43,15 @@ export class Ventas implements OnInit {
 
   confirmOpen = false;
   private pendingDeleteId: number | null = null;
+  motivoEliminacion = '';
 
   // Modal de abonos
   mostrarModalAbonos = false;
   ventaSeleccionada: Venta | null = null;
+
+  // Mostrar eliminadas
+  mostrarEliminadas = false;
+  rowsOriginales: Venta[] = [];
 
   private static readonly LIMITE_CANTIDAD = 6;
   private static readonly TOPE_TOTAL = 99_999_999;
@@ -147,9 +159,30 @@ export class Ventas implements OnInit {
 
   loadRows() {
     this.ventasSrv.listar().subscribe({
-      next: (rows) => (this.rows = rows || []),
-      error: () => (this.rows = []),
+      next: (rows) => {
+        this.rowsOriginales = rows || [];
+        this.actualizarFiltroPantalla();
+      },
+      error: () => {
+        this.rows = [];
+        this.rowsOriginales = [];
+      },
     });
+  }
+
+  actualizarFiltroPantalla() {
+    if (this.mostrarEliminadas) {
+      // Mostrar solo las eliminadas
+      this.rows = this.rowsOriginales.filter((r) => r.activo === false);
+    } else {
+      // Mostrar solo las activas
+      this.rows = this.rowsOriginales.filter((r) => r.activo !== false);
+    }
+  }
+
+  toggleMostrarEliminadas() {
+    this.mostrarEliminadas = !this.mostrarEliminadas;
+    this.actualizarFiltroPantalla();
   }
 
   // ---------- líneas ----------
@@ -463,11 +496,13 @@ export class Ventas implements OnInit {
 
   confirmarEliminar(id: number) {
     this.pendingDeleteId = id ?? null;
+    this.motivoEliminacion = '';
     this.confirmOpen = true;
   }
   closeConfirm() {
     this.confirmOpen = false;
     this.pendingDeleteId = null;
+    this.motivoEliminacion = '';
   }
   doEliminarConfirmado() {
     if (this.pendingDeleteId == null) {
@@ -475,9 +510,10 @@ export class Ventas implements OnInit {
       return;
     }
     const id = this.pendingDeleteId;
+    const motivo = this.motivoEliminacion.trim() || null;
     this.closeConfirm();
 
-    this.ventasSrv.eliminar(id).subscribe({
+    this.ventasSrv.eliminar(id, motivo).subscribe({
       next: (res: any) => {
         if (Array.isArray(res?.warnings) && res.warnings.length > 0) {
           console.warn('Warnings:', res.warnings);

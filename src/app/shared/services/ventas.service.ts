@@ -30,13 +30,19 @@ export class VentasService {
 
   eliminar(
     id: number,
+    motivo?: string | null,
   ): Observable<{ message?: string; warnings?: any[]; violations?: any[]; code?: string }> {
+    const params = new URLSearchParams();
+    if (motivo && motivo.trim()) {
+      params.append('motivo', motivo.trim());
+    }
+    const url = `${this.base}/${id}${params.toString() ? '?' + params.toString() : ''}`;
     return this.http.delete<{
       message?: string;
       warnings?: any[];
       violations?: any[];
       code?: string;
-    }>(`${this.base}/${id}`);
+    }>(url);
   }
 
   // ═══════════════════════════════════════════════════════════

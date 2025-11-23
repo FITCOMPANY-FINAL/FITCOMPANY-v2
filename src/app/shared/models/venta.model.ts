@@ -11,10 +11,11 @@ export interface Venta {
   saldo_pendiente?: number;
   es_fiado?: boolean;
   observaciones?: string | null;
-  // Campos de soft delete
+  // Campos de soft delete (eliminación lógica)
   activo?: boolean;
   eliminado_en?: string | null;
   eliminado_por?: string | null;
+  motivo_eliminacion?: string | null; // Motivo por el cual se eliminó la venta
   // Campos de productos vendidos
   productos?: string[]; // Array de productos: ["Creatina (x1)", "Proteína (x2)"]
   total_productos?: number; // Total de productos vendidos

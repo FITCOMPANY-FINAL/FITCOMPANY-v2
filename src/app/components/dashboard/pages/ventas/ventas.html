@@ -212,7 +212,18 @@
     <!-- Card: Listado -->
     <section class="mx-auto w-full max-w-5xl mt-8">
         <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
-            <div class="px-6 py-4 border-b border-white/5 font-semibold">Ventas registradas</div>
+            <div class="px-6 py-4 border-b border-white/5 font-semibold flex items-center justify-between">
+                <span>Ventas registradas</span>
+                <label class="flex items-center gap-2 cursor-pointer font-normal text-sm">
+                    <input type="checkbox"
+                           [checked]="mostrarEliminadas"
+                           (change)="toggleMostrarEliminadas()"
+                           class="w-4 h-4 rounded">
+                    <span [class.text-red-400]="mostrarEliminadas">
+                        {{ mostrarEliminadas ? '🗑️ Mostrando eliminadas' : '📋 Mostrar eliminadas' }}
+                    </span>
+                </label>
+            </div>
 
             <div *ngIf="rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
                 No hay registros
@@ -233,8 +244,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let r of rows" class="border-b border-white/5 hover:bg-surface-900/30"
-                            [class.bg-yellow-500/5]="r.es_fiado && r.estado === 'PENDIENTE'">
+                        <tr *ngFor="let r of rows" class="border-b border-white/5 transition-colors"
+                            [class.bg-yellow-500/5]="r.es_fiado && r.estado === 'PENDIENTE'"
+                            [class.bg-red-500/5]="r.activo === false"
+                            [class.hover:bg-surface-900/30]="r.activo !== false"
+                            [class.hover:bg-red-500/10]="r.activo === false"
+                            [class.opacity-70]="r.activo === false">
                             <td class="px-4 py-3">
                                 <span class="font-mono text-xs text-brand-400">{{ r.folio }}</span>
                             </td>
@@ -263,14 +278,17 @@
                             <td class="px-4 py-3 text-sm text-gray-400">{{ r.fecha | date:'dd/MM/yy HH:mm' }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
                             <td class="px-4 py-3">
-                                <span *ngIf="!r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
+                                <span *ngIf="r.activo === false" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">
+                                    🗑️ ELIMINADA
+                                </span>
+                                <span *ngIf="r.activo !== false && !r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
                                     PAGADA
                                 </span>
-                                <span *ngIf="r.es_fiado && r.estado === 'PENDIENTE'"
+                                <span *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PENDIENTE'"
                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-yellow-500/20 text-yellow-400">
                                     FIADA ({{ r.saldo_pendiente | currency:'COP':'symbol-narrow':'1.0-0' }})
                                 </span>
-                                <span *ngIf="r.es_fiado && r.estado === 'PAGADA'"
+                                <span *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PAGADA'"
                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
                                     PAGADA ✓
                                 </span>
@@ -282,18 +300,22 @@
                             <td class="px-4 py-3 text-sm text-gray-400">{{ r.usuario }}</td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <!-- Botón Abonar (solo para ventas fiadas pendientes) -->
-                                    <button *ngIf="r.es_fiado && r.estado === 'PENDIENTE'"
+                                    <!-- Botón Abonar (solo para ventas fiadas pendientes y activas) -->
+                                    <button *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PENDIENTE'"
                                             class="px-3 py-1.5 text-xs font-semibold bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition"
                                             type="button"
                                             (click)="abrirModalAbonos(r)">
                                         💰 Abonar
                                     </button>
-                                    <!-- Botón Eliminar -->
-                                    <button class="text-red-400 hover:text-red-300 font-semibold text-xs"
+                                    <!-- Botón Eliminar (deshabilitado si ya está eliminado) -->
+                                    <button [disabled]="r.activo === false"
+                                            [class.opacity-50]="r.activo === false"
+                                            [class.cursor-not-allowed]="r.activo === false"
+                                            class="text-red-400 hover:text-red-300 font-semibold text-xs transition"
                                             type="button"
-                                            (click)="confirmarEliminar(r.id_venta)">
-                                        Eliminar
+                                            [title]="r.activo === false ? 'Esta venta ya está eliminada' : 'Eliminar venta'"
+                                            (click)="!( r.activo === false) && confirmarEliminar(r.id_venta)">
+                                        {{ r.activo === false ? '✓ Eliminada' : 'Eliminar' }}
                                     </button>
                                 </div>
                             </td>
@@ -310,8 +332,21 @@
         <div class="absolute inset-0 bg-black/60"></div>
 
         <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
-            <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+            <h3 class="text-lg font-semibold mb-2">⚠️ Confirmar eliminación</h3>
             <p class="text-sm text-textc-mute">¿Seguro que deseas eliminar esta venta?</p>
+
+            <div class="mt-4">
+                <label class="block text-sm font-semibold mb-2">Motivo (opcional)</label>
+                <textarea
+                    [(ngModel)]="motivoEliminacion"
+                    placeholder="Ej: Error de registro, venta duplicada, cliente rechazó..."
+                    class="w-full rounded-lg bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-red-500 text-sm resize-none"
+                    rows="3"
+                    maxlength="500"></textarea>
+                <div class="text-xs text-textc-mute mt-1">
+                    {{ motivoEliminacion.length }}/500 caracteres
+                </div>
+            </div>
 
             <div class="mt-6 flex gap-3 justify-end">
                 <button type="button" class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
@@ -319,9 +354,9 @@
                     Cancelar
                 </button>
                 <button type="button"
-                    class="rounded-xl bg-red-500/90 text-black font-semibold px-4 py-2 hover:bg-red-400"
+                    class="rounded-xl bg-red-500/90 text-black font-semibold px-4 py-2 hover:bg-red-400 transition"
                     (click)="doEliminarConfirmado()">
-                    Eliminar
+                    🗑️ Eliminar venta
                 </button>
             </div>
         </div>
