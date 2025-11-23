@@ -1,5 +1,6 @@
 export interface Venta {
   id_venta: number;
+  folio?: string;
   fecha: string;
   total: number;
   usuario: string;
@@ -10,6 +11,10 @@ export interface Venta {
   saldo_pendiente?: number;
   es_fiado?: boolean;
   observaciones?: string | null;
+  // Campos de soft delete
+  activo?: boolean;
+  eliminado_en?: string | null;
+  eliminado_por?: string | null;
 }
 
 export interface VentaDetalleItem {
