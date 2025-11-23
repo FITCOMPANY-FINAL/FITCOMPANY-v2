@@ -181,12 +181,17 @@
       </div>
 
       <div *ngIf="comprasPorDiaFiltradas.length > 0" class="overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
           <thead>
             <tr class="border-b border-white/10">
               <th class="text-left py-3 px-4 text-sm font-semibold">Fecha</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Cantidad</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Total</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Cantidad</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -195,8 +200,8 @@
               class="border-b border-white/5 hover:bg-surface-900/50"
             >
               <td class="py-3 px-4">{{ formatearFecha(dia.fecha) }}</td>
-              <td class="py-3 px-4 text-right">{{ dia.cantidad }}</td>
-              <td class="py-3 px-4 text-right font-semibold">
+              <td class="py-3 px-4 text-center">{{ dia.cantidad }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
                 {{ dia.total | currency:'COP':'symbol-narrow':'1.0-0' }}
               </td>
             </tr>
@@ -212,12 +217,17 @@
       <h3 class="text-lg font-semibold text-brand-500 mb-4">Top 5 Productos Más Comprados</h3>
 
       <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
           <thead>
             <tr class="border-b border-white/10">
               <th class="text-left py-3 px-4 text-sm font-semibold">Producto</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Unidades</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Total</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Unidades</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -226,8 +236,8 @@
               class="border-b border-white/5 hover:bg-surface-900/50"
             >
               <td class="py-3 px-4">{{ producto.nombre }}</td>
-              <td class="py-3 px-4 text-right">{{ producto.unidades }}</td>
-              <td class="py-3 px-4 text-right font-semibold">
+              <td class="py-3 px-4 text-center">{{ producto.unidades }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
                 {{ producto.total | currency:'COP':'symbol-narrow':'1.0-0' }}
               </td>
             </tr>
@@ -243,12 +253,17 @@
       <h3 class="text-lg font-semibold text-brand-500 mb-4">Compras por Usuario</h3>
 
       <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full table-fixed">
+          <colgroup>
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+            <col class="w-1/3" />
+          </colgroup>
           <thead>
             <tr class="border-b border-white/10">
               <th class="text-left py-3 px-4 text-sm font-semibold">Usuario</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Cantidad Compras</th>
-              <th class="text-right py-3 px-4 text-sm font-semibold">Total Comprado</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Cantidad Compras</th>
+              <th class="text-center py-3 px-4 text-sm font-semibold">Total Comprado</th>
             </tr>
           </thead>
           <tbody>
@@ -257,8 +272,8 @@
               class="border-b border-white/5 hover:bg-surface-900/50"
             >
               <td class="py-3 px-4">{{ usuario.nombre }}</td>
-              <td class="py-3 px-4 text-right">{{ usuario.compras }}</td>
-              <td class="py-3 px-4 text-right font-semibold">
+              <td class="py-3 px-4 text-center">{{ usuario.compras }}</td>
+              <td class="py-3 px-4 text-center font-semibold">
                 {{ usuario.total | currency:'COP':'symbol-narrow':'1.0-0' }}
               </td>
             </tr>
@@ -273,4 +288,3 @@
     <div class="text-textc-mute">Cargando reporte...</div>
   </div>
 </div>
-

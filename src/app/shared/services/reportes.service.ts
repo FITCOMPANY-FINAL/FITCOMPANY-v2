@@ -36,6 +36,20 @@ export interface ReporteVentasResponse {
     ventas: number;
     total: number;
   }>;
+  cartera: {
+    total_por_cobrar: number;
+    cantidad_ventas_pendientes: number;
+    ventas_pendientes: Array<{
+      id_venta: number;
+      folio: string | null;
+      fecha: string;
+      total: number;
+      pagado: number;
+      saldo_pendiente: number;
+      cliente: string | null;
+      vendedor: string;
+    }>;
+  };
 }
 
 export interface ReporteComprasResponse {

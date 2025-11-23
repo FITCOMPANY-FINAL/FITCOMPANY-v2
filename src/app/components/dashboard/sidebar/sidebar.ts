@@ -87,7 +87,16 @@ export class Sidebar implements OnInit {
 
     // Separar padres e hijos
     const padres = formularios.filter((f) => f.es_padre).sort((a, b) => a.orden - b.orden);
-    const hijos = formularios.filter((f) => !f.es_padre && f.url);
+    
+    // Filtrar hijos y eliminar duplicados por URL o título
+    const hijos = formularios
+      .filter((f) => !f.es_padre && f.url)
+      .filter((f, index, self) => 
+        index === self.findIndex((h) => 
+          (h.url && f.url && h.url === f.url) || 
+          (h.titulo === f.titulo && h.padre === f.padre)
+        )
+      );
 
     // Construir estructura jerárquica
     const menuItems = padres
@@ -124,6 +133,10 @@ export class Sidebar implements OnInit {
               link: urlPath,
             };
           })
+          // Eliminar duplicados por link o label
+          .filter((item, index, self) => 
+            index === self.findIndex((h) => h.link === item.link || h.label === item.label)
+          )
           .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
 
         // Solo incluir el padre si tiene hijos

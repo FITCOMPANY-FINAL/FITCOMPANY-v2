@@ -237,6 +237,29 @@ export class ReporteVentas implements OnInit {
     const vendedoresSheet = XLSX.utils.aoa_to_sheet(vendedoresData);
     XLSX.utils.book_append_sheet(workbook, vendedoresSheet, 'Ventas por Vendedor');
 
+    // Hoja 5: Cartera (si hay deudas pendientes)
+    if (this.datos.cartera && this.datos.cartera.cantidad_ventas_pendientes > 0) {
+      const carteraData = [
+        ['CARTERA - DEUDAS PENDIENTES'],
+        [''],
+        ['Total por Cobrar:', this.datos.cartera.total_por_cobrar],
+        ['Cantidad de Ventas Pendientes:', this.datos.cartera.cantidad_ventas_pendientes],
+        [''],
+        ['Folio', 'Fecha', 'Cliente', 'Total Venta', 'Pagado', 'Saldo Pendiente', 'Vendedor'],
+        ...this.datos.cartera.ventas_pendientes.map(v => [
+          v.folio || 'N/A',
+          this.formatearFecha(v.fecha),
+          v.cliente || 'Sin cliente',
+          v.total,
+          v.pagado,
+          v.saldo_pendiente,
+          v.vendedor,
+        ]),
+      ];
+      const carteraSheet = XLSX.utils.aoa_to_sheet(carteraData);
+      XLSX.utils.book_append_sheet(workbook, carteraSheet, 'Cartera');
+    }
+
     // Generar nombre del archivo
     const fechaInicio = this.datos.periodo.fecha_inicio.replace(/-/g, '');
     const fechaFin = this.datos.periodo.fecha_fin.replace(/-/g, '');
