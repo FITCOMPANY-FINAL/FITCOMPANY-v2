@@ -7,106 +7,108 @@
 
   <!-- Tarjetas de estadísticas -->
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-    <!-- Card -->
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-5">
-      <p class="text-xs text-textc-mute">Miembros activos</p>
+    <!-- Productos en catálogo -->
+    <div
+      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
+    >
+      <p class="text-xs text-textc-mute">Productos</p>
       <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">148</span>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-          +4 esta semana
+        <span class="text-3xl font-extrabold text-brand-500">{{ totalProductos }}</span>
+        <span
+          class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30"
+        >
+          Catálogo
         </span>
       </div>
     </div>
 
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-5">
-      <p class="text-xs text-textc-mute">Clases hoy</p>
+    <!-- Compras registradas -->
+    <div
+      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
+    >
+      <p class="text-xs text-textc-mute">Compras</p>
       <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">6</span>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-white/5 text-textc-mute border border-white/10">
-          2 en curso
+        <span class="text-3xl font-extrabold text-brand-500">{{ totalCompras }}</span>
+        <span
+          class="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/30"
+        >
+          {{ comprasHoy }} hoy
         </span>
       </div>
     </div>
 
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-5">
-      <p class="text-xs text-textc-mute">Ingresos (noviembre)</p>
+    <!-- Ventas registradas -->
+    <div
+      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
+    >
+      <p class="text-xs text-textc-mute">Ventas</p>
       <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">$3.200.000</span>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-          +12%
-        </span>
-      </div>
-    </div>
-
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-5">
-      <p class="text-xs text-textc-mute">Horarios activos ahora</p>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">2</span>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-white/5 text-textc-mute border border-white/10">
-          salón A y C
+        <span class="text-3xl font-extrabold text-brand-500">{{ totalVentas }}</span>
+        <span
+          class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+        >
+          {{ ventasHoy }} hoy
         </span>
       </div>
     </div>
   </section>
 
-  <!-- Sección de actividad + “quick actions” -->
+  <!-- Sección de ingresos + actividad -->
   <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Actividad reciente -->
+    <!-- Ingresos de este mes -->
     <div class="lg:col-span-2 rounded-2xl bg-surface-800 border border-white/5 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-brand-500">Actividad reciente</h2>
-        <button class="text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition">
-          Ver todo
-        </button>
+        <h2 class="text-lg font-semibold text-brand-500">Ingresos (este mes)</h2>
+        <div class="text-3xl font-extrabold text-emerald-400">
+          {{ ingresosMes | currency:'COP':'symbol-narrow':'1.0-0' }}
+        </div>
       </div>
+      <p class="text-xs text-textc-mute">Ingresos totales generados por ventas en el mes actual</p>
+    </div>
 
-      <ol class="space-y-4">
-        <li class="flex items-start gap-4 border-l-4 border-brand-500 pl-4">
-          <div class="text-brand-500 text-lg">🟢</div>
-          <div>
-            <p class="font-medium">Juan Pérez se unió al plan mensual</p>
-            <p class="text-xs text-textc-mute">hace 1 hora</p>
+    <!-- Actividades recientes -->
+    <div class="rounded-2xl bg-surface-800 border border-white/5 p-6">
+      <h3 class="text-base font-semibold text-brand-500 mb-4">Últimas actividades</h3>
+      <ol class="space-y-3">
+        <li
+          *ngFor="let act of actividades.slice(0, 3)"
+          class="flex items-start gap-3 border-l-4 border-brand-500 pl-3"
+        >
+          <div class="text-lg">{{ act.icono }}</div>
+          <div class="flex-1">
+            <p class="text-xs font-medium text-white">{{ act.descripcion }}</p>
+            <p class="text-xs text-textc-mute mt-0.5">{{ act.fecha }}</p>
           </div>
         </li>
-        <li class="flex items-start gap-4 border-l-4 border-brand-500 pl-4">
-          <div class="text-brand-500 text-lg">🟢</div>
-          <div>
-            <p class="font-medium">Se creó una nueva clase: Spinning</p>
-            <p class="text-xs text-textc-mute">hace 3 horas</p>
-          </div>
-        </li>
-        <li class="flex items-start gap-4 border-l-4 border-brand-500 pl-4">
-          <div class="text-brand-500 text-lg">🟢</div>
-          <div>
-            <p class="font-medium">Laura M. renovó tiquetera de 15 clases</p>
-            <p class="text-xs text-textc-mute">ayer</p>
-          </div>
+        <li *ngIf="actividades.length === 0" class="text-xs text-textc-mute">
+          Sin actividades recientes
         </li>
       </ol>
     </div>
+  </section>
 
-    <!-- Acciones rápidas -->
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-6">
-      <h3 class="text-base font-semibold text-brand-500 mb-4">Acciones rápidas</h3>
-
-      <div class="space-y-3">
-        <button class="w-full text-left px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">
-          ➕ Registrar compra
-        </button>
-        <button class="w-full text-left px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">
-          🧍 Añadir miembro
-        </button>
-        <button class="w-full text-left px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition">
-          🗓️ Crear clase
-        </button>
-      </div>
-
-      <div class="mt-6 rounded-xl bg-surface-900 border border-white/5 p-4">
-        <p class="text-sm text-textc-mute">Consejo</p>
-        <p class="text-sm mt-1">
-          Usa el menú lateral para navegar por módulos. Mantén tus datos al día para ver métricas útiles acá.
-        </p>
-      </div>
+  <!-- Acciones rápidas -->
+  <section class="rounded-2xl bg-surface-800 border border-white/5 p-6">
+    <h3 class="text-base font-semibold text-brand-500 mb-4">Acciones rápidas</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <button
+        (click)="irACompras()"
+        class="text-left px-4 py-3 rounded-xl border border-brand-500/30 bg-brand-500/5 text-brand-400 hover:bg-brand-500/10 hover:border-brand-500/50 transition"
+      >
+        🛒 Registrar compra
+      </button>
+      <button
+        (click)="irAVentas()"
+        class="text-left px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition"
+      >
+        💰 Registrar venta
+      </button>
+      <button
+        (click)="irAProductos()"
+        class="text-left px-4 py-3 rounded-xl border border-blue-500/30 bg-blue-500/5 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/50 transition"
+      >
+        📦 Ver productos
+      </button>
     </div>
   </section>
 </div>

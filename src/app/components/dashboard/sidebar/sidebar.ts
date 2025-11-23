@@ -33,7 +33,7 @@ const ICON_MAP: { [key: string]: string } = {
   standalone: true,
   imports: [LucideAngularModule, RouterLink, CommonModule],
   templateUrl: './sidebar.html',
-  styleUrl: './sidebar.scss'
+  styleUrl: './sidebar.scss',
 })
 export class Sidebar implements OnInit {
   private auth = inject(AuthService);
@@ -41,7 +41,7 @@ export class Sidebar implements OnInit {
 
   // Menú dinámico basado en formularios del JWT
   menu: MenuItem[] = [];
-  
+
   // Información del usuario
   usuario: {
     nombre: string;
@@ -55,50 +55,66 @@ export class Sidebar implements OnInit {
   }
 
   private loadMenuFromToken() {
-    const formularios = this.auth.getFormulariosFromToken();
-    
+    let formularios = this.auth.getFormulariosFromToken();
+
+    // Filtrar y eliminar "Formularios" del menú
+    formularios = formularios.filter((f) => f.titulo !== 'Formularios');
+
+    // Agregar Dashboard al inicio como un item sin hijos
+    const dashboardItem: MenuItem = {
+      label: 'Dashboard',
+      icon: 'LayoutDashboard',
+      link: 'overview',
+      hijos: [],
+    };
+
     // Separar padres e hijos
-    const padres = formularios.filter(f => f.es_padre).sort((a, b) => a.orden - b.orden);
-    const hijos = formularios.filter(f => !f.es_padre && f.url);
-    
+    const padres = formularios.filter((f) => f.es_padre).sort((a, b) => a.orden - b.orden);
+    const hijos = formularios.filter((f) => !f.es_padre && f.url);
+
     // Construir estructura jerárquica
-    this.menu = padres.map(padre => {
-      // Obtener hijos de este padre
-      const hijosDelPadre = hijos
-        .filter(h => h.padre === padre.id)
-        .map(h => {
-          // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
-          let urlPath = h.url?.replace('/dashboard/', '') || '';
-          
-          // Normalizar rutas que pueden tener variaciones
-          if (urlPath === 'unidades-medida') {
-            urlPath = 'unidades-medidas'; // La ruta real en Angular
-          }
-          if (urlPath === 'tipos-identificacion') {
-            urlPath = 'tipos-identificaciones'; // La ruta real en Angular
-          }
-          
-          return {
-            label: h.titulo,
-            icon: this.getIconForUrl(h.url || ''),
-            link: urlPath
-          };
-        })
-        .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
-      
-      // Solo incluir el padre si tiene hijos
-      if (hijosDelPadre.length === 0) {
-        return null;
-      }
-      
-      return {
-        label: padre.titulo,
-        icon: this.getIconForUrl(padre.url || ''),
-        link: null, // Los padres no tienen link
-        hijos: hijosDelPadre
-      };
-    }).filter(item => item !== null) as MenuItem[];
-    
+    const menuItems = padres
+      .map((padre) => {
+        // Obtener hijos de este padre
+        const hijosDelPadre = hijos
+          .filter((h) => h.padre === padre.id)
+          .map((h) => {
+            // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
+            let urlPath = h.url?.replace('/dashboard/', '') || '';
+
+            // Normalizar rutas que pueden tener variaciones
+            if (urlPath === 'unidades-medida') {
+              urlPath = 'unidades-medidas'; // La ruta real en Angular
+            }
+            if (urlPath === 'tipos-identificacion') {
+              urlPath = 'tipos-identificaciones'; // La ruta real en Angular
+            }
+
+            return {
+              label: h.titulo,
+              icon: this.getIconForUrl(h.url || ''),
+              link: urlPath,
+            };
+          })
+          .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
+
+        // Solo incluir el padre si tiene hijos
+        if (hijosDelPadre.length === 0) {
+          return null;
+        }
+
+        return {
+          label: padre.titulo,
+          icon: this.getIconForUrl(padre.url || ''),
+          link: null, // Los padres no tienen link
+          hijos: hijosDelPadre,
+        };
+      })
+      .filter((item) => item !== null) as MenuItem[];
+
+    // Agregar Dashboard al inicio del menú
+    this.menu = [dashboardItem, ...menuItems];
+
     console.log('📋 Menú cargado desde JWT:', this.menu.length, 'padres con sus hijos');
   }
 
@@ -107,7 +123,7 @@ export class Sidebar implements OnInit {
     if (ICON_MAP[url]) {
       return ICON_MAP[url];
     }
-    
+
     // Iconos por defecto según palabras clave
     if (url.includes('overview')) return 'LayoutDashboard';
     if (url.includes('usuario')) return 'User';
@@ -119,17 +135,18 @@ export class Sidebar implements OnInit {
     if (url.includes('unidad') || url.includes('medida')) return 'Ruler';
     if (url.includes('permiso')) return 'ShieldCheck';
     if (url.includes('identificacion') || url.includes('tipo')) return 'Fingerprint';
-    
+
     return 'Box'; // Icono por defecto (usando uno que sabemos que está disponible)
   }
 
   private loadUserInfo() {
     const user = this.auth.getUserFromToken();
     if (user) {
-      const nombre = `${user.nombres || user.nombre || ''} ${user.apellido1 || ''} ${user.apellido2 || ''}`.trim();
+      const nombre =
+        `${user.nombres || user.nombre || ''} ${user.apellido1 || ''} ${user.apellido2 || ''}`.trim();
       const rol = user.nombre_rol || user.rol || 'Sin rol';
       const correo = user.email || user.correo || 'Sin correo';
-      
+
       this.usuario = { nombre, rol, correo };
     }
   }
