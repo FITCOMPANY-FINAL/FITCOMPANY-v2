@@ -1,1 +1,19 @@
-:host { display: block; }
+:host {
+  display: block;
+}
+
+/* Mejorar visibilidad del input datetime */
+.input-datetime {
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Color de texto en el picker de fecha/hora */
+  color: white;
+
+  /* Estilo del calendario cuando se abre */
+  &::-webkit-calendar-picker-indicator {
+    filter: brightness(1.2) invert(0.8);
+    cursor: pointer;
+  }
+}

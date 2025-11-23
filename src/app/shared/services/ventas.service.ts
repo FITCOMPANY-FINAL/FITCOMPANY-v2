@@ -10,8 +10,9 @@ export class VentasService {
   private http = inject(HttpClient);
   private base = `${environment.apiBaseUrl}/ventas`;
 
-  listar(): Observable<Venta[]> {
-    return this.http.get<Venta[]>(this.base);
+  listar(incluirEliminadas: boolean = false): Observable<Venta[]> {
+    const params = incluirEliminadas ? '?incluir_eliminadas=true' : '';
+    return this.http.get<Venta[]>(`${this.base}${params}`);
   }
 
   detalle(id: number): Observable<{ productos: VentaDetalleItem[] }> {
@@ -30,13 +31,15 @@ export class VentasService {
 
   eliminar(
     id: number,
+    motivo?: string | null,
   ): Observable<{ message?: string; warnings?: any[]; violations?: any[]; code?: string }> {
+    const body = motivo && motivo.trim() ? { motivo: motivo.trim() } : {};
     return this.http.delete<{
       message?: string;
       warnings?: any[];
       violations?: any[];
       code?: string;
-    }>(`${this.base}/${id}`);
+    }>(`${this.base}/${id}`, { body });
   }
 
   // ═══════════════════════════════════════════════════════════

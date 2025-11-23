@@ -1,6 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormsModule,
+  FormBuilder,
+  Validators,
+  FormArray,
+  FormGroup,
+} from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { VentasService } from '../../../../shared/services/ventas.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
@@ -12,7 +19,7 @@ import { AbonosModalComponent } from '../../modals/abonos-modal/abonos-modal.com
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AbonosModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AbonosModalComponent],
   templateUrl: './ventas.html',
   styleUrl: './ventas.scss',
 })
@@ -36,10 +43,19 @@ export class Ventas implements OnInit {
 
   confirmOpen = false;
   private pendingDeleteId: number | null = null;
+  motivoEliminacion = '';
 
   // Modal de abonos
   mostrarModalAbonos = false;
   ventaSeleccionada: Venta | null = null;
+
+  // Mostrar eliminadas
+  mostrarEliminadas = false;
+  rowsOriginales: Venta[] = [];
+
+  // Caché de abonos para tooltips
+  abonosCache: Map<number, any[]> = new Map();
+  cargandoAbonos: Map<number, boolean> = new Map();
 
   private static readonly LIMITE_CANTIDAD = 6;
   private static readonly TOPE_TOTAL = 99_999_999;
@@ -63,7 +79,12 @@ export class Ventas implements OnInit {
 
   get today(): string {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   ngOnInit(): void {
@@ -146,10 +167,42 @@ export class Ventas implements OnInit {
   }
 
   loadRows() {
-    this.ventasSrv.listar().subscribe({
-      next: (rows) => (this.rows = rows || []),
-      error: () => (this.rows = []),
+    // Cargar todas las ventas (activas y eliminadas)
+    this.ventasSrv.listar(true).subscribe({
+      next: (rows) => {
+        this.rowsOriginales = rows || [];
+        this.actualizarFiltroPantalla();
+      },
+      error: () => {
+        this.rows = [];
+        this.rowsOriginales = [];
+      },
     });
+  }
+
+  actualizarFiltroPantalla() {
+    if (this.mostrarEliminadas) {
+      // Mostrar solo las eliminadas
+      this.rows = this.rowsOriginales.filter((r) => this.estaEliminada(r));
+    } else {
+      // Mostrar solo las activas
+      this.rows = this.rowsOriginales.filter((r) => this.estaActiva(r));
+    }
+  }
+
+  toggleMostrarEliminadas() {
+    this.mostrarEliminadas = !this.mostrarEliminadas;
+    this.actualizarFiltroPantalla();
+  }
+
+  // Helper para verificar si una venta está eliminada
+  estaEliminada(venta: any): boolean {
+    return !venta.activo || venta.activo === false || venta.activo === 0;
+  }
+
+  // Helper para verificar si una venta está activa
+  estaActiva(venta: any): boolean {
+    return venta.activo === true || venta.activo === 1;
   }
 
   // ---------- líneas ----------
@@ -463,21 +516,31 @@ export class Ventas implements OnInit {
 
   confirmarEliminar(id: number) {
     this.pendingDeleteId = id ?? null;
+    this.motivoEliminacion = '';
     this.confirmOpen = true;
   }
   closeConfirm() {
     this.confirmOpen = false;
     this.pendingDeleteId = null;
+    this.motivoEliminacion = '';
   }
   doEliminarConfirmado() {
     if (this.pendingDeleteId == null) {
       this.closeConfirm();
       return;
     }
+
+    // Validar que el motivo sea obligatorio
+    const motivo = this.motivoEliminacion.trim();
+    if (!motivo || motivo.length < 5) {
+      this.showError('❌ El motivo de eliminación es obligatorio (mínimo 5 caracteres)');
+      return;
+    }
+
     const id = this.pendingDeleteId;
     this.closeConfirm();
 
-    this.ventasSrv.eliminar(id).subscribe({
+    this.ventasSrv.eliminar(id, motivo).subscribe({
       next: (res: any) => {
         if (Array.isArray(res?.warnings) && res.warnings.length > 0) {
           console.warn('Warnings:', res.warnings);
@@ -549,5 +612,39 @@ export class Ventas implements OnInit {
     if (abonoRegistrado) {
       this.loadRows();
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📋 HISTORIAL DE ABONOS EN HOVER (TOOLTIP)
+  // ═══════════════════════════════════════════════════════════
+
+  onMouseEnterAbonos(idVenta: number): void {
+    // Si ya está en cache, no hacer nada (ya se cargó)
+    if (this.abonosCache.has(idVenta)) return;
+
+    // Marcar como cargando
+    this.cargandoAbonos.set(idVenta, true);
+
+    // Llamar al servicio para obtener abonos
+    this.ventasSrv.obtenerAbonos(idVenta).subscribe({
+      next: (res: any) => {
+        // Guardar los abonos en cache
+        this.abonosCache.set(idVenta, res.abonos || []);
+        this.cargandoAbonos.set(idVenta, false);
+      },
+      error: (err) => {
+        console.error('Error al cargar abonos:', err);
+        this.abonosCache.set(idVenta, []);
+        this.cargandoAbonos.set(idVenta, false);
+      },
+    });
+  }
+
+  getAbonos(idVenta: number): any[] {
+    return this.abonosCache.get(idVenta) || [];
+  }
+
+  isCarandoAbonos(idVenta: number): boolean {
+    return this.cargandoAbonos.get(idVenta) || false;
   }
 }
