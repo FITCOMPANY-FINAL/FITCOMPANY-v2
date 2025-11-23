@@ -186,9 +186,9 @@
             <!-- Fecha y observaciones -->
             <div class="mt-6 pt-6 border-t border-white/10 grid gap-4 md:grid-cols-2">
                 <div>
-                    <label class="block text-sm font-semibold mb-2">Fecha de venta</label>
-                    <input type="date"
-                        class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
+                    <label class="block text-sm font-semibold mb-2">Fecha y hora de venta</label>
+                    <input type="datetime-local"
+                        class="input-datetime w-full rounded-xl bg-surface-900 border border-brand-500/50 px-4 py-3 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-white font-semibold"
                         formControlName="fecha_venta" />
                 </div>
                 <div>
@@ -233,30 +233,31 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-surface-900/60 sticky top-0">
                         <tr class="border-b border-white/5">
-                            <th class="px-4 py-3 min-w-[80px]">Folio</th>
-                            <th class="px-4 py-3 min-w-[200px]">Productos</th>
-                            <th class="px-4 py-3 min-w-[120px]">Fecha</th>
-                            <th class="px-4 py-3 text-right min-w-[100px]">Total</th>
-                            <th class="px-4 py-3 min-w-[100px]">Estado</th>
+                            <th class="px-6 py-3">Folio</th>
+                            <th class="px-6 py-3">Productos</th>
+                            <th class="px-6 py-3">Fecha</th>
+                            <th class="px-6 py-3 text-right">Total</th>
+                            <th class="px-6 py-3">Estado</th>
                             <!-- Columna Motivo - Solo si mostrando eliminadas -->
-                            <th *ngIf="mostrarEliminadas" class="px-4 py-3 min-w-[180px]">Motivo</th>
-                            <th class="px-4 py-3 min-w-[150px]">Cliente</th>
-                            <th class="px-4 py-3 min-w-[120px]">Usuario</th>
+                            <th *ngIf="mostrarEliminadas" class="px-6 py-3">Motivo</th>
+                            <th class="px-6 py-3">Cliente</th>
+                            <th class="px-6 py-3">Usuario</th>
                             <!-- Columna Acciones - Solo si mostrando activas -->
-                            <th *ngIf="!mostrarEliminadas" class="px-4 py-3 text-center min-w-[100px]">Acciones</th>
+                            <th *ngIf="!mostrarEliminadas" class="px-6 py-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let r of rows" class="border-b border-white/5 transition-colors"
                             [class.bg-yellow-500/5]="r.es_fiado && r.estado === 'PENDIENTE'"
                             [class.bg-red-500/5]="estaEliminada(r)"
-                            [class.hover:bg-surface-900/30]="estaActiva(r)"
+                            [class.hover:bg-yellow-500/10]="r.es_fiado && r.estado === 'PENDIENTE' && estaActiva(r)"
+                            [class.hover:bg-surface-900/30]="!r.es_fiado && estaActiva(r)"
                             [class.hover:bg-red-500/10]="estaEliminada(r)"
                             [class.opacity-70]="estaEliminada(r)">
-                            <td class="px-4 py-3">
+                            <td class="px-6 py-3">
                                 <span class="font-mono text-xs text-brand-400">{{ r.folio }}</span>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-6 py-3 text-sm">
                                 <div class="relative group inline-block">
                                     <span class="text-gray-300">{{ getPrimerosProductos(r) }}</span>
                                     <span *ngIf="getProductosAdicionales(r) > 0"
@@ -278,9 +279,9 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-400">{{ r.fecha | date:'dd/MM/yy HH:mm' }}</td>
-                            <td class="px-4 py-3 text-right font-semibold">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
-                            <td class="px-4 py-3">
+                            <td class="px-6 py-3 text-sm text-gray-400">{{ r.fecha | date:'dd/MM/yy HH:mm' }}</td>
+                            <td class="px-6 py-3 text-right font-semibold">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                            <td class="px-6 py-3">
                                 <span *ngIf="estaEliminada(r)" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">
                                     🗑️ ELIMINADA
                                 </span>
@@ -297,7 +298,7 @@
                                 </span>
                             </td>
                             <!-- Columna Motivo - Solo si mostrando eliminadas -->
-                            <td *ngIf="mostrarEliminadas" class="px-4 py-3 text-sm">
+                            <td *ngIf="mostrarEliminadas" class="px-6 py-3 text-sm">
                                 <div class="relative group inline-block w-full">
                                     <!-- Motivo -->
                                     <span *ngIf="r.motivo_eliminacion"
@@ -318,13 +319,13 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-6 py-3 text-sm">
                                 <span *ngIf="r.cliente_desc">{{ r.cliente_desc }}</span>
                                 <span *ngIf="!r.cliente_desc" class="text-gray-500">-</span>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-400">{{ r.usuario }}</td>
+                            <td class="px-6 py-3 text-sm text-gray-400">{{ r.usuario }}</td>
                             <!-- Columna Acciones - Solo si mostrando activas -->
-                            <td *ngIf="!mostrarEliminadas" class="px-4 py-3 text-center">
+                            <td *ngIf="!mostrarEliminadas" class="px-6 py-3 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <!-- Botón Abonar (solo para ventas fiadas pendientes y activas) -->
                                     <button *ngIf="r.es_fiado && r.estado === 'PENDIENTE'"
