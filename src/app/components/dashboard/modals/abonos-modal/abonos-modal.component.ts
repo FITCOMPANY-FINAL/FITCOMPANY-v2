@@ -106,15 +106,15 @@ export class AbonosModalComponent implements OnInit {
     const raw = input.value.replace(/\D/g, '');
     const num = Number(raw);
 
-    // Validar que no exceda el saldo pendiente
-    const saldo = this.venta.saldo_pendiente || 0;
-    if (num > saldo) {
-      input.value = this.getMasked(saldo);
-      this.form.patchValue({ monto: saldo.toString() });
-    } else {
-      input.value = this.getMasked(num);
-      this.form.patchValue({ monto: raw });
-    }
+    // Simplemente formatear, SIN autocorregir
+    input.value = this.getMasked(num);
+    this.form.patchValue({ monto: raw });
+  }
+
+  pagarTotal(): void {
+    // Redondear para quitar decimales que puedan venir de la BD
+    const saldo = Math.floor(this.venta.saldo_pendiente || 0);
+    this.form.patchValue({ monto: saldo.toString() });
   }
 
   // ═══════════════════════════════════════════════════════════

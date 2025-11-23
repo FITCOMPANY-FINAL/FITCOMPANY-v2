@@ -1,35 +1,44 @@
 <!-- Overlay oscuro -->
-<div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-     (click)="cerrarModal()">
-
+<div
+  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  (click)="cerrarModal()"
+>
   <!-- Modal -->
-  <div class="bg-surface-800 rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-       (click)="$event.stopPropagation()">
-
+  <div
+    class="bg-surface-800 rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+    (click)="$event.stopPropagation()"
+  >
     <!-- Header -->
-    <div class="sticky top-0 bg-surface-800 border-b border-white/10 px-6 py-4 flex items-center justify-between z-10">
+    <div
+      class="sticky top-0 bg-surface-800 border-b border-white/10 px-6 py-4 flex items-center justify-between z-10"
+    >
       <div>
         <h2 class="text-xl font-bold text-brand-400">💰 Abonar a Venta</h2>
-        <p class="text-sm text-gray-400 mt-1">{{ venta.folio || ('#' + venta.id_venta) }}</p>
+        <p class="text-sm text-gray-400 mt-1">{{ venta.folio || '#' + venta.id_venta }}</p>
       </div>
-      <button type="button"
-              class="text-gray-400 hover:text-white text-2xl leading-none"
-              (click)="cerrarModal()">
+      <button
+        type="button"
+        class="text-gray-400 hover:text-white text-2xl leading-none"
+        (click)="cerrarModal()"
+      >
         ✕
       </button>
     </div>
 
     <!-- Body -->
     <div class="p-6 space-y-6">
-
       <!-- Mensajes -->
-      <div *ngIf="okMsg"
-           class="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-sm">
+      <div
+        *ngIf="okMsg"
+        class="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-sm"
+      >
         {{ okMsg }}
       </div>
 
-      <div *ngIf="errorMsg"
-           class="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
+      <div
+        *ngIf="errorMsg"
+        class="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-sm"
+      >
         {{ errorMsg }}
       </div>
 
@@ -45,7 +54,7 @@
           <div>
             <p class="text-xs text-gray-500 uppercase tracking-wide">Total Venta</p>
             <p class="text-sm font-semibold text-white mt-1">
-              {{ venta.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+              {{ venta.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
             </p>
           </div>
         </div>
@@ -53,20 +62,24 @@
         <!-- Barra de progreso -->
         <div class="mb-3">
           <div class="flex justify-between text-xs text-gray-400 mb-2">
-            <span>Pagado: {{ montoPagado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span>Pagado: {{ montoPagado | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
             <span>{{ porcentajePagado }}%</span>
           </div>
           <div class="h-3 bg-surface-950 rounded-full overflow-hidden border border-white/5">
-            <div class="h-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-300"
-                 [style.width.%]="porcentajePagado"></div>
+            <div
+              class="h-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-300"
+              [style.width.%]="porcentajePagado"
+            ></div>
           </div>
         </div>
 
         <!-- Saldo pendiente -->
-        <div class="bg-gradient-to-br from-brand-500/20 to-brand-600/20 border border-brand-500/30 rounded-lg p-4 mt-4">
-          <p class="text-xs text-brand-300 uppercase tracking-wide mb-1">💰 Saldo Pendiente</p>
-          <p class="text-2xl font-bold text-brand-400">
-            {{ (venta.saldo_pendiente || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}
+        <div class="bg-surface-900/50 border-2 border-emerald-500/60 rounded-lg p-4 mt-4">
+          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1 font-semibold">
+            💰 Saldo Pendiente
+          </p>
+          <p class="text-2xl font-bold text-white">
+            {{ venta.saldo_pendiente || 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
           </p>
         </div>
       </div>
@@ -77,9 +90,7 @@
           📋 Historial de Abonos
         </h3>
 
-        <div *ngIf="loading" class="text-center py-4 text-gray-500 text-sm">
-          Cargando...
-        </div>
+        <div *ngIf="loading" class="text-center py-4 text-gray-500 text-sm">Cargando...</div>
 
         <div *ngIf="!loading && abonos.length === 0" class="text-center py-4 text-gray-500 text-sm">
           No hay abonos registrados aún
@@ -98,13 +109,13 @@
             <tbody>
               <tr *ngFor="let abono of abonos" class="border-b border-white/5 hover:bg-white/5">
                 <td class="py-2 px-2 text-gray-300">
-                  {{ abono.fecha_pago | date:'dd/MM/yy HH:mm' }}
+                  {{ abono.fecha_pago | date: 'dd/MM/yy HH:mm' }}
                 </td>
                 <td class="py-2 px-2 text-gray-300">
                   {{ abono.metodo_pago }}
                 </td>
                 <td class="py-2 px-2 text-right font-semibold text-brand-400">
-                  {{ abono.monto | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  {{ abono.monto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
                 </td>
                 <td class="py-2 px-2 text-gray-400">
                   {{ abono.observaciones || '-' }}
@@ -122,21 +133,27 @@
         </h3>
 
         <form [formGroup]="form" (ngSubmit)="registrarAbono()" class="space-y-4">
-
           <!-- Método de pago -->
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2">
               Método de pago <span class="text-red-400">*</span>
             </label>
-            <select formControlName="id_metodo_pago"
-                    class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-brand-500 transition">
+            <select
+              formControlName="id_metodo_pago"
+              class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-brand-500 transition"
+            >
               <option value="">Seleccionar método</option>
               <option *ngFor="let mp of metodosPago" [value]="mp.id_metodo_pago">
                 {{ mp.nombre_metodo_pago }}
               </option>
             </select>
-            <p *ngIf="form.get('id_metodo_pago')?.touched && form.get('id_metodo_pago')?.hasError('required')"
-               class="text-red-400 text-xs mt-1">
+            <p
+              *ngIf="
+                form.get('id_metodo_pago')?.touched &&
+                form.get('id_metodo_pago')?.hasError('required')
+              "
+              class="text-red-400 text-xs mt-1"
+            >
               El método de pago es requerido
             </p>
           </div>
@@ -146,25 +163,55 @@
             <label class="block text-sm font-medium text-gray-300 mb-2">
               Monto <span class="text-red-400">*</span>
               <span class="text-xs text-gray-500 ml-2">
-                (máx. {{ (venta.saldo_pendiente || 0) | currency:'COP':'symbol-narrow':'1.0-0' }})
+                (máx.
+                {{ venta.saldo_pendiente || 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0' }})
               </span>
             </label>
             <div class="relative">
               <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-              <input type="text"
-                     inputmode="numeric"
-                     placeholder="0"
-                     [value]="getMasked(form.get('monto')?.value)"
-                     (input)="onInputMonto($event)"
-                     class="w-full rounded-xl bg-surface-900 border border-white/10 pl-8 pr-4 py-3 text-white outline-none focus:border-brand-500 transition">
+              <input
+                type="text"
+                inputmode="numeric"
+                placeholder="0"
+                [value]="getMasked(form.get('monto')?.value)"
+                (input)="onInputMonto($event)"
+                class="w-full rounded-xl bg-surface-900 border border-white/10 pl-8 pr-4 py-3 text-white outline-none focus:border-brand-500 transition"
+              />
             </div>
-            <p *ngIf="form.get('monto')?.touched && form.get('monto')?.hasError('required')"
-               class="text-red-400 text-xs mt-1">
+
+            <!-- Botón Pagar Total -->
+            <button
+              type="button"
+              (click)="pagarTotal()"
+              class="mt-3 w-full px-4 py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/60 font-semibold text-sm transition flex items-center justify-center gap-2"
+            >
+              <span>💳</span>
+              <span
+                >Pagar total ({{
+                  venta.saldo_pendiente || 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0'
+                }})</span
+              >
+            </button>
+
+            <!-- Mensajes de error -->
+            <p
+              *ngIf="form.get('monto')?.touched && form.get('monto')?.hasError('required')"
+              class="text-red-400 text-xs mt-1"
+            >
               El monto es requerido
             </p>
-            <p *ngIf="form.get('monto')?.touched && form.get('monto')?.hasError('min')"
-               class="text-red-400 text-xs mt-1">
+            <p
+              *ngIf="form.get('monto')?.touched && form.get('monto')?.hasError('min')"
+              class="text-red-400 text-xs mt-1"
+            >
               El monto debe ser mayor a $0
+            </p>
+            <p
+              *ngIf="unmask(form.get('monto')?.value) > (venta.saldo_pendiente || 0)"
+              class="text-red-400 text-xs mt-1"
+            >
+              El monto (${{ getMasked(form.get('monto')?.value) }}) no puede exceder el saldo
+              pendiente
             </p>
           </div>
 
@@ -173,30 +220,39 @@
             <label class="block text-sm font-medium text-gray-300 mb-2">
               Observaciones <span class="text-gray-500 text-xs">(opcional)</span>
             </label>
-            <textarea formControlName="observaciones"
-                      rows="2"
-                      placeholder="Ej: Pago parcial, segunda cuota, etc."
-                      class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-brand-500 transition resize-none"></textarea>
+            <textarea
+              formControlName="observaciones"
+              rows="2"
+              placeholder="Ej: Pago parcial, segunda cuota, etc."
+              class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-brand-500 transition resize-none"
+            ></textarea>
           </div>
 
           <!-- Botones -->
           <div class="flex gap-3 pt-2">
-            <button type="button"
-                    (click)="cerrarModal()"
-                    [disabled]="saving"
-                    class="flex-1 rounded-xl border border-white/20 text-gray-300 font-semibold py-3 px-5 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <button
+              type="button"
+              (click)="cerrarModal()"
+              [disabled]="saving"
+              class="flex-1 rounded-xl border border-white/20 text-gray-300 font-semibold py-3 px-5 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Cancelar
             </button>
-            <button type="submit"
-                    [disabled]="saving || form.invalid"
-                    class="flex-1 rounded-xl bg-brand-500 text-black font-semibold py-3 px-5 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <button
+              type="submit"
+              [disabled]="
+                saving ||
+                form.invalid ||
+                unmask(form.get('monto')?.value) > (venta.saldo_pendiente || 0)
+              "
+              class="flex-1 rounded-xl bg-brand-500 text-black font-semibold py-3 px-5 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <span *ngIf="!saving">Registrar Abono</span>
               <span *ngIf="saving">Guardando...</span>
             </button>
           </div>
         </form>
       </div>
-
     </div>
   </div>
 </div>
