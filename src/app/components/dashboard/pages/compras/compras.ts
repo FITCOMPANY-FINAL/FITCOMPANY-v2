@@ -42,7 +42,7 @@ export class Compras implements OnInit {
   form = this.fb.nonNullable.group({
     producto_id: ['', [Validators.required]],
     cantidad: [null as number | null, [Validators.required, Validators.min(1), Validators.max(999999)]],
-    costo_unitario: [null as number | null, [Validators.required, Validators.min(0), Validators.max(99999999)]],
+    costo_unitario: [{ value: null as number | null, disabled: true }, [Validators.required, Validators.min(0), Validators.max(99999999)]],
     fecha_compra: [this.today, [Validators.required]],
     observaciones: ['' as string | null]
   });
@@ -73,9 +73,26 @@ export class Compras implements OnInit {
       this.errorMsgInline = '';
     }, ms);
   }
-  private showOk(msg: string) { this.okMsg = msg; this.errorMsg = ''; this.errorMsgInline = ''; this.autoHideMessages(); }
-  private showError(msg: string) { this.errorMsg = msg; this.okMsg = ''; this.autoHideMessages(); }
-  private showInline(msg: string) { this.errorMsgInline = msg; this.okMsg = ''; this.errorMsg = ''; this.autoHideMessages(); }
+  
+  private showOk(msg: string) { 
+    this.okMsg = msg; 
+    this.errorMsg = ''; 
+    this.errorMsgInline = ''; 
+    this.autoHideMessages();
+  }
+  
+  private showError(msg: string) { 
+    this.errorMsg = msg; 
+    this.okMsg = ''; 
+    this.autoHideMessages();
+  }
+  
+  private showInline(msg: string) { 
+    this.errorMsgInline = msg; 
+    this.okMsg = ''; 
+    this.errorMsg = ''; 
+    this.autoHideMessages();
+  }
 
   // enmascara y sincroniza con el form
   onInputMasked(ctrl: 'cantidad' | 'costo_unitario', maxLen: number, ev: Event) {
@@ -103,6 +120,36 @@ export class Compras implements OnInit {
     });
   }
 
+  // Cuando se selecciona un producto, cargar automáticamente el precio de compra
+  onProductoChange() {
+    const productoId = this.form.value.producto_id;
+    
+    // Habilitar temporalmente el campo para poder actualizar su valor
+    this.form.controls.costo_unitario.enable();
+    
+    if (!productoId) {
+      // Si no hay producto seleccionado, limpiar el costo unitario
+      this.form.controls.costo_unitario.setValue(null);
+      this.costoMasked = '';
+      this.form.controls.costo_unitario.disable();
+      return;
+    }
+
+    const producto = this.productos.find(p => String(p.id_producto) === productoId);
+    if (producto && producto.precio_costo != null) {
+      const precioCosto = Math.floor(producto.precio_costo);
+      this.form.controls.costo_unitario.setValue(precioCosto);
+      this.costoMasked = this.withThousands(String(precioCosto));
+    } else {
+      // Si el producto no tiene precio_costo, dejar en 0
+      this.form.controls.costo_unitario.setValue(0);
+      this.costoMasked = '0';
+    }
+    
+    // Deshabilitar nuevamente después de actualizar
+    this.form.controls.costo_unitario.disable();
+  }
+
   loadData() {
     this.comprasSrv.listar().subscribe({
       next: (rows) => this.rows = rows || [],
@@ -118,7 +165,8 @@ export class Compras implements OnInit {
     if (!(this.form.value.cantidad && this.form.value.cantidad >= 1 && this.form.value.cantidad <= 999999)) {
       return this.showInline('La cantidad debe ser un entero entre 1 y 999.999.');
     }
-    const precioUnitario = this.form.value.costo_unitario ?? null;
+    // Obtener el valor del costo_unitario aunque esté deshabilitado
+    const precioUnitario = this.form.getRawValue().costo_unitario ?? null;
     if (precioUnitario === null || precioUnitario < 0 || precioUnitario > 99999999) {
       return this.showInline('El precio unitario debe estar entre 0 y 99.999.999.');
     }
@@ -131,11 +179,13 @@ export class Compras implements OnInit {
     this.errorMsgInline = '';
 
     // El backend espera detalles como array
+    // Obtener el valor del costo_unitario aunque esté deshabilitado
+    const costoUnitarioValue = this.form.getRawValue().costo_unitario;
     const body = {
       detalles: [{
         id_producto: Number(this.form.value.producto_id),
         cantidad: Math.floor(Number(this.form.value.cantidad) || 0),
-        precio_unitario: Math.floor(precioUnitario || 0)
+        precio_unitario: Math.floor(costoUnitarioValue || 0)
       }],
       fecha_compra: this.form.value.fecha_compra || undefined, // Opcional, backend usa fecha actual si no se envía
       observaciones: (this.form.value.observaciones || '').trim() || null
@@ -159,7 +209,6 @@ export class Compras implements OnInit {
           }
           this.loadData();
           this.resetForm();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
           const errorMessage = e?.error?.message || 'Error al guardar la compra.';
@@ -185,6 +234,8 @@ export class Compras implements OnInit {
           const primerDetalle = compraDetalle.detalles?.[0];
           
           if (primerDetalle) {
+            // Habilitar temporalmente el campo para poder actualizar su valor
+            this.form.controls.costo_unitario.enable();
             this.form.patchValue({
               producto_id: String(primerDetalle.id_producto),
               cantidad: Math.floor(Number(primerDetalle.cantidad_detalle_compra) || 0),
@@ -192,6 +243,8 @@ export class Compras implements OnInit {
               fecha_compra: compraDetalle['fecha_compra'] ? compraDetalle['fecha_compra'].split('T')[0] : this.today,
               observaciones: compraDetalle['observaciones'] || null
             });
+            // Deshabilitar nuevamente después de actualizar
+            this.form.controls.costo_unitario.disable();
 
             // Aplicar máscaras
             this.cantidadMasked = this.withThousands(String(Math.floor(Number(primerDetalle.cantidad_detalle_compra) || 0)).replace(/\D/g, ''));
@@ -268,6 +321,8 @@ export class Compras implements OnInit {
   private resetForm() {
     this.editando = false;
     this.editId = null;
+    // Habilitar temporalmente para resetear
+    this.form.controls.costo_unitario.enable();
     this.form.reset({
       producto_id: '',
       cantidad: null,
@@ -275,6 +330,8 @@ export class Compras implements OnInit {
       fecha_compra: this.today,
       observaciones: null
     });
+    // Deshabilitar nuevamente después del reset
+    this.form.controls.costo_unitario.disable();
     this.cantidadMasked = '';
     this.costoMasked = '';
   }

@@ -1,5 +1,5 @@
 <!-- Sidebar oscuro, diferencia clara con el contenido -->
-<nav class="h-screen w-64 bg-surface-900 text-textc-base border-r border-white/5 flex flex-col"
+<nav class="fixed left-0 top-0 h-screen w-64 bg-surface-900 text-textc-base border-r border-white/5 flex flex-col z-50"
   aria-label="Sidebar principal">
 
   <!-- Header / Logo -->
@@ -12,8 +12,30 @@
 
   <!-- Menú (scrollable) -->
   <ul role="menu" class="flex-1 overflow-y-auto overflow-x-auto py-3">
-    <li *ngFor="let item of menu">
-      <a [routerLink]="item.link" class="flex items-center gap-3 mx-2 mb-1 px-3 py-2 rounded-lg hover:bg-surface-800">
+    <li *ngFor="let item of menu" class="mb-1">
+      <!-- Padre (si tiene hijos) -->
+      <div *ngIf="item.hijos && item.hijos.length > 0" class="mx-2">
+        <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-textc-mute font-semibold">
+          <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
+          <span>{{ item.label }}</span>
+        </div>
+        <!-- Hijos del padre -->
+        <ul class="ml-8 mt-1 space-y-1">
+          <li *ngFor="let hijo of item.hijos">
+            <a [routerLink]="hijo.link" 
+               routerLinkActive="bg-surface-800 text-white"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
+              <lucide-icon [name]="hijo.icon" class="w-5 h-5"></lucide-icon>
+              <span>{{ hijo.label }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <!-- Item sin hijos (si no tiene estructura jerárquica) -->
+      <a *ngIf="!item.hijos || item.hijos.length === 0" 
+         [routerLink]="item.link" 
+         routerLinkActive="bg-surface-800 text-white"
+         class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
         <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
         <span>{{ item.label }}</span>
       </a>
@@ -24,7 +46,6 @@
   <div class="border-t border-white/5 p-3 space-y-3">
     <!-- Información del usuario -->
     <div *ngIf="usuario" class="px-3 py-2 rounded-lg bg-surface-800/50 border border-white/5">
-      <div class="text-xs text-textc-mute mb-1">Usuario actual</div>
       <div class="text-sm font-semibold text-white truncate" [title]="usuario.nombre">
         {{ usuario.nombre || 'Sin nombre' }}
       </div>
