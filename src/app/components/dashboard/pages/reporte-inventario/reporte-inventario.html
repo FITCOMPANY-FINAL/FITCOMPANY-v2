@@ -1,0 +1,291 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="text-2xl font-bold">Reporte de Inventario</h2>
+    <div class="flex gap-2">
+      <button
+        (click)="cargarReporte()"
+        [disabled]="loading"
+        class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ loading ? 'Cargando...' : 'Actualizar' }}
+      </button>
+      <button
+        (click)="exportarAExcel()"
+        [disabled]="!datos || loading"
+        class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Exportar Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div
+    *ngIf="errorMsg"
+    class="mx-auto w-full max-w-6xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center"
+  >
+    {{ errorMsg }}
+  </div>
+
+  <!-- Resultados -->
+  <div *ngIf="datos && !loading" class="space-y-6">
+    <!-- Resumen de hoy -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Resumen de Hoy</h3>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Ventas de Hoy</div>
+          <div class="text-xl font-bold">{{ datos.resumen_hoy.ventas.cantidad }}</div>
+          <div class="text-lg text-brand-500">
+            {{ datos.resumen_hoy.ventas.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Compras de Hoy</div>
+          <div class="text-xl font-bold">{{ datos.resumen_hoy.compras.cantidad }}</div>
+          <div class="text-lg text-brand-500">
+            {{ datos.resumen_hoy.compras.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resumen del mes -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Resumen del Mes</h3>
+
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Ventas del Mes</div>
+          <div class="text-xl font-bold">{{ datos.resumen_mes.ventas.cantidad }}</div>
+          <div class="text-lg text-brand-500">
+            {{ datos.resumen_mes.ventas.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Compras del Mes</div>
+          <div class="text-xl font-bold">{{ datos.resumen_mes.compras.cantidad }}</div>
+          <div class="text-lg text-brand-500">
+            {{ datos.resumen_mes.compras.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Ganancia Neta</div>
+          <div
+            class="text-xl font-bold"
+            [class.text-brand-500]="datos.resumen_mes.ganancia_neta >= 0"
+            [class.text-red-500]="datos.resumen_mes.ganancia_neta < 0"
+          >
+            {{ datos.resumen_mes.ganancia_neta | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventario -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Estado del Inventario</h3>
+
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Total Productos</div>
+          <div class="text-2xl font-bold">{{ datos.inventario.total_productos }}</div>
+        </div>
+
+        <div 
+          *ngIf="datos.inventario.productos_sobre_maximo > 0"
+          class="rounded-xl bg-surface-900 border border-red-500/30 p-4"
+        >
+          <div class="text-sm text-textc-mute">Por Encima del Stock Máximo</div>
+          <div class="text-2xl font-bold text-red-500">
+            {{ datos.inventario.productos_sobre_maximo }}
+          </div>
+        </div>
+
+        <div 
+          *ngIf="datos.inventario.productos_bajo_minimo > 0"
+          class="rounded-xl bg-surface-900 border border-yellow-500/30 p-4"
+        >
+          <div class="text-sm text-textc-mute">Bajo del Stock Mínimo</div>
+          <div class="text-2xl font-bold text-yellow-500">
+            {{ datos.inventario.productos_bajo_minimo }}
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Valor Total Inventario</div>
+          <div class="text-xl font-bold text-brand-500">
+            {{ datos.inventario.valor_total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Productos por encima del stock máximo -->
+      <div *ngIf="datos.inventario.productos_sobre_maximo_lista.length > 0" class="mb-6">
+        <h4 class="text-md font-semibold mb-3 text-red-500">
+          Productos por Encima del Stock Máximo
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 px-4 text-sm font-semibold">Producto</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Stock Actual</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Stock Máximo</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Exceso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let producto of datos.inventario.productos_sobre_maximo_lista"
+                class="border-b border-white/5 hover:bg-surface-900/50"
+              >
+                <td class="py-3 px-4">{{ producto.nombre }}</td>
+                <td class="py-3 px-4 text-right text-red-500">{{ producto.stock_actual }}</td>
+                <td class="py-3 px-4 text-right">{{ producto.stock_maximo }}</td>
+                <td class="py-3 px-4 text-right font-semibold text-red-500">
+                  {{ producto.exceso }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Productos bajo del stock mínimo -->
+      <div *ngIf="datos.inventario.productos_bajo_minimo_lista.length > 0">
+        <h4 class="text-md font-semibold mb-3 text-yellow-500">
+          Productos Bajo del Stock Mínimo
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 px-4 text-sm font-semibold">Producto</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Stock Actual</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Stock Mínimo</th>
+                <th class="text-right py-3 px-4 text-sm font-semibold">Faltante</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let producto of datos.inventario.productos_bajo_minimo_lista"
+                class="border-b border-white/5 hover:bg-surface-900/50"
+              >
+                <td class="py-3 px-4">{{ producto.nombre }}</td>
+                <td class="py-3 px-4 text-right text-yellow-500">{{ producto.stock_actual }}</td>
+                <td class="py-3 px-4 text-right">{{ producto.stock_minimo }}</td>
+                <td class="py-3 px-4 text-right font-semibold text-yellow-500">
+                  {{ producto.faltante }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cartera -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Cartera (Ventas Fiadas)</h3>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Ventas Pendientes</div>
+          <div class="text-xl font-bold">{{ datos.cartera.ventas_pendientes }}</div>
+        </div>
+
+        <div class="rounded-xl bg-surface-900 border border-white/5 p-4">
+          <div class="text-sm text-textc-mute">Total por Cobrar</div>
+          <div class="text-xl font-bold text-brand-500">
+            {{ datos.cartera.total_por_cobrar | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top productos y más rentable -->
+    <section
+      class="mx-auto w-full max-w-6xl rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h3 class="text-lg font-semibold text-brand-500 mb-4">Productos Destacados</h3>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <!-- Top 5 productos -->
+        <div>
+          <h4 class="text-md font-semibold mb-3">Top 5 Productos Más Vendidos del Mes</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-white/10">
+                  <th class="text-left py-3 px-4 text-sm font-semibold">Producto</th>
+                  <th class="text-right py-3 px-4 text-sm font-semibold">Unidades</th>
+                  <th class="text-right py-3 px-4 text-sm font-semibold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let producto of datos.top_5_productos"
+                  class="border-b border-white/5 hover:bg-surface-900/50"
+                >
+                  <td class="py-3 px-4">{{ producto.nombre }}</td>
+                  <td class="py-3 px-4 text-right">{{ producto.unidades }}</td>
+                  <td class="py-3 px-4 text-right font-semibold">
+                    {{ producto.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Producto más rentable -->
+        <div>
+          <h4 class="text-md font-semibold mb-3">Producto Más Rentable del Mes</h4>
+          <div
+            *ngIf="datos.producto_mas_rentable"
+            class="rounded-xl bg-surface-900 border border-brand-500/30 p-4"
+          >
+            <div class="text-sm text-textc-mute">Producto</div>
+            <div class="text-xl font-bold text-brand-500 mb-3">
+              {{ datos.producto_mas_rentable.nombre }}
+            </div>
+            <div class="text-sm text-textc-mute">Ganancia Total</div>
+            <div class="text-2xl font-bold text-brand-500">
+              {{ datos.producto_mas_rentable.ganancia | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+          </div>
+          <div
+            *ngIf="!datos.producto_mas_rentable"
+            class="rounded-xl bg-surface-900 border border-white/5 p-4 text-center text-textc-mute"
+          >
+            No hay datos disponibles
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fecha de generación -->
+    <div class="text-center text-sm text-textc-mute">
+      Reporte generado el {{ formatearFecha(datos.fecha_generacion) }}
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-12">
+    <div class="text-textc-mute">Cargando reporte...</div>
+  </div>
+</div>
+

@@ -1,0 +1,26 @@
+// Estilos personalizados para el scrollbar del sidebar
+nav {
+  // Estilos para navegadores basados en Webkit (Chrome, Edge, Safari)
+  ::-webkit-scrollbar {
+    width: 6px; // Scrollbar más delgada
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent; // Fondo transparente (mismo color que el sidebar)
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(132, 204, 22, 0.4); // Verde brand-500 (#84cc16) con transparencia
+    border-radius: 3px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba(132, 204, 22, 0.6); // Verde brand-500 más opaco al hover
+    }
+  }
+
+  // Estilos para Firefox
+  scrollbar-width: thin;
+  scrollbar-color: rgba(132, 204, 22, 0.4) transparent; // Verde brand-500 (#84cc16) con transparencia
+}
+

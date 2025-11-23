@@ -6,6 +6,7 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { TokenPayload } from '../../../shared/models/usuario.model';
 
 interface MenuItem {
+  id: string; // ID único para identificar el item
   label: string;
   icon: string;
   link: string | null; // null si es padre (no tiene link)
@@ -18,14 +19,26 @@ const ICON_MAP: { [key: string]: string } = {
   '/dashboard/usuarios': 'User',
   '/dashboard/compras': 'ShoppingCart',
   '/dashboard/ventas': 'ShoppingBasket',
-  '/dashboard/categorias': 'ChartBarStacked',
-  '/dashboard/roles': 'UserCog',
-  '/dashboard/productos': 'Box',
+  '/dashboard/categorias': 'Tag',
+  '/dashboard/roles': 'Key',
+  '/dashboard/productos': 'Apple',
   '/dashboard/unidades-medidas': 'Ruler',
   '/dashboard/unidades-medida': 'Ruler',
   '/dashboard/permisos': 'ShieldCheck',
   '/dashboard/tipos-identificaciones': 'Fingerprint',
   '/dashboard/tipos-identificacion': 'Fingerprint',
+  '/dashboard/reportes/ventas': 'BarChart',
+  '/dashboard/reportes/compras': 'LineChart',
+  '/dashboard/reportes/inventario': 'Box',
+};
+
+// Mapeo de títulos de padres a iconos específicos
+const PADRE_ICON_MAP: { [key: string]: string } = {
+  'Seguridad': 'Lock',
+  'Inventario': 'Warehouse',
+  'Operaciones': 'Settings',
+  'Reportes': 'FileText',
+  'Gestión de Usuarios': 'Users',
 };
 
 @Component({
@@ -41,6 +54,9 @@ export class Sidebar implements OnInit {
 
   // Menú dinámico basado en formularios del JWT
   menu: MenuItem[] = [];
+
+  // Estado de expansión de los elementos padre (key: id del item)
+  expandedItems: Set<string> = new Set<string>();
 
   // Información del usuario
   usuario: {
@@ -62,6 +78,7 @@ export class Sidebar implements OnInit {
 
     // Agregar Dashboard al inicio como un item sin hijos
     const dashboardItem: MenuItem = {
+      id: 'dashboard',
       label: 'Dashboard',
       icon: 'LayoutDashboard',
       link: 'overview',
@@ -89,8 +106,19 @@ export class Sidebar implements OnInit {
             if (urlPath === 'tipos-identificacion') {
               urlPath = 'tipos-identificaciones'; // La ruta real en Angular
             }
+            // Normalizar rutas de reportes
+            if (urlPath === 'reportes/ventas') {
+              urlPath = 'reporte-ventas';
+            }
+            if (urlPath === 'reportes/compras') {
+              urlPath = 'reporte-compras';
+            }
+            if (urlPath === 'reportes/inventario') {
+              urlPath = 'reporte-inventario';
+            }
 
             return {
+              id: `hijo-${h.id || h.titulo}`,
               label: h.titulo,
               icon: this.getIconForUrl(h.url || ''),
               link: urlPath,
@@ -103,9 +131,15 @@ export class Sidebar implements OnInit {
           return null;
         }
 
+        const padreId = `padre-${padre.id || padre.titulo}`;
+        
+        // Inicializar como expandido por defecto
+        this.expandedItems.add(padreId);
+
         return {
+          id: padreId,
           label: padre.titulo,
-          icon: this.getIconForUrl(padre.url || ''),
+          icon: this.getIconForPadre(padre.titulo),
           link: null, // Los padres no tienen link
           hijos: hijosDelPadre,
         };
@@ -115,7 +149,16 @@ export class Sidebar implements OnInit {
     // Agregar Dashboard al inicio del menú
     this.menu = [dashboardItem, ...menuItems];
 
-    console.log('📋 Menú cargado desde JWT:', this.menu.length, 'padres con sus hijos');
+    console.log('📋 Menú cargado desde JWT:', this.menu.length, 'items en el menú');
+  }
+
+  private getIconForPadre(titulo: string): string {
+    // Buscar icono específico para el padre
+    if (PADRE_ICON_MAP[titulo]) {
+      return PADRE_ICON_MAP[titulo];
+    }
+    // Icono por defecto para padres
+    return 'Box';
   }
 
   private getIconForUrl(url: string): string {
@@ -129,9 +172,9 @@ export class Sidebar implements OnInit {
     if (url.includes('usuario')) return 'User';
     if (url.includes('compra')) return 'ShoppingCart';
     if (url.includes('venta')) return 'ShoppingBasket';
-    if (url.includes('categoria')) return 'ChartBarStacked';
-    if (url.includes('rol')) return 'UserCog';
-    if (url.includes('producto')) return 'Box';
+    if (url.includes('categoria')) return 'Tag';
+    if (url.includes('rol')) return 'Key';
+    if (url.includes('producto')) return 'Apple';
     if (url.includes('unidad') || url.includes('medida')) return 'Ruler';
     if (url.includes('permiso')) return 'ShieldCheck';
     if (url.includes('identificacion') || url.includes('tipo')) return 'Fingerprint';
@@ -175,5 +218,24 @@ export class Sidebar implements OnInit {
   // (legacy) si en algún lado quedó (click)="logout()", mantenemos compat.
   logout() {
     this.openLogoutConfirm();
+  }
+
+  // Toggle de expansión/colapso de elementos padre
+  toggleExpanded(itemId: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    if (this.expandedItems.has(itemId)) {
+      this.expandedItems.delete(itemId);
+    } else {
+      this.expandedItems.add(itemId);
+    }
+  }
+
+  // Verificar si un elemento está expandido
+  isExpanded(itemId: string): boolean {
+    return this.expandedItems.has(itemId);
   }
 }

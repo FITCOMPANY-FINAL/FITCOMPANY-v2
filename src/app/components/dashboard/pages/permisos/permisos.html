@@ -22,68 +22,13 @@
     {{ errorMsgInline }}
   </div>
 
-  <!-- Card: Asignar permiso individual -->
+  <!-- Card: Asignación de permisos -->
   <section class="mx-auto w-full max-w-4xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
-    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignar permiso</h3>
+    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignación de permisos</h3>
     <p class="text-sm text-textc-mute mb-4">
-      Asigna un formulario a un rol. Si el formulario es hijo de otro, el padre se asignará automáticamente.
-      Al asignar un permiso, el rol tendrá acceso completo (crear, leer, actualizar, eliminar) al formulario.
-    </p>
-
-    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <!-- Rol -->
-        <div>
-          <label class="block text-sm mb-1">Rol <span class="text-brand-500">*</span></label>
-          <select formControlName="id_rol"
-                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500">
-            <option value="">Seleccionar rol…</option>
-            <option *ngFor="let r of roles" [value]="r.id_rol">
-              {{ r.nombre_rol }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Formulario -->
-        <div>
-          <label class="block text-sm mb-1">Formulario <span class="text-brand-500">*</span></label>
-          <select formControlName="id_formulario"
-                  class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500"
-                  [disabled]="loadingFormularios">
-            <option value="">{{ loadingFormularios ? 'Cargando formularios...' : 'Seleccionar formulario…' }}</option>
-            <option *ngFor="let f of formularios" [value]="f.id_formulario">
-              {{ f.titulo_formulario }}
-              <span *ngIf="f.is_padre" class="text-textc-mute"> (Padre)</span>
-              <span *ngIf="f.padre_id" class="text-textc-mute"> (Hijo)</span>
-            </option>
-          </select>
-          <p *ngIf="!loadingFormularios && formularios.length === 0" class="mt-1 text-xs text-yellow-400">
-            ⚠️ No hay formularios disponibles. Asegúrate de que existan formularios en la base de datos.
-          </p>
-          <p *ngIf="formularios.length > 0" class="mt-1 text-xs text-textc-mute">
-            {{ formularios.length }} formulario(s) disponible(s)
-          </p>
-        </div>
-      </div>
-
-      <!-- Botón -->
-      <button type="submit"
-              [disabled]="saving"
-              class="w-full rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
-                     font-semibold py-3 hover:bg-brand-500 hover:text-black transition
-                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-        {{ saving ? 'Guardando…' : 'Asignar permiso' }}
-      </button>
-    </form>
-  </section>
-
-  <!-- Card: Asignación masiva (bulk) -->
-  <section class="mx-auto w-full max-w-4xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
-    <h3 class="text-lg font-semibold text-brand-500 mb-4">Asignación masiva</h3>
-    <p class="text-sm text-textc-mute mb-4">
-      <strong>¿Qué es esto?</strong> En lugar de asignar un formulario a la vez, puedes seleccionar un rol y marcar varios formularios 
-      para asignarlos todos de una sola vez. Útil cuando quieres dar acceso a múltiples formularios a un rol específico.
-      <br><strong>Ejemplo:</strong> Seleccionas "Vendedor" y marcas "Ventas", "Productos" y "Clientes" → se asignan los 3 formularios al rol "Vendedor" de una vez.
+      Selecciona un rol y marca los formularios que deseas asignar. <strong>Importante:</strong> Los formularios padre (📁) no se pueden asignar directamente, solo sus hijos (📄). 
+      Si asignas un formulario hijo, el padre se asignará automáticamente. Al asignar un permiso, el rol tendrá acceso completo (crear, leer, actualizar, eliminar) al formulario.
+      <br><strong>Ejemplo:</strong> Seleccionas "Vendedor" y marcas "Permisos" (hijo de "Seguridad") → se asignan ambos: "Permisos" y su padre "Seguridad" automáticamente.
     </p>
 
     <div class="space-y-4">
@@ -100,22 +45,59 @@
         </select>
       </div>
 
-      <!-- Lista de formularios con checkboxes -->
+      <!-- Lista de formularios con checkboxes agrupados -->
       <div *ngIf="form.value.id_rol && !loadingFormularios && formularios.length > 0" 
-           class="max-h-64 overflow-y-auto border border-white/10 rounded-xl p-4 space-y-2">
-        <div *ngFor="let f of formularios" class="flex items-center gap-3 py-1">
-          <input type="checkbox"
-                 [checked]="estaSeleccionadoBulk(f.id_formulario)"
-                 (change)="toggleFormularioBulk(f.id_formulario)"
-                 [disabled]="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
-                 class="w-4 h-4 rounded border-white/20 bg-surface-900 text-brand-500 focus:ring-brand-500 cursor-pointer">
-          <label class="flex-1 cursor-pointer">
-            <span class="font-medium">{{ f.titulo_formulario }}</span>
-            <span *ngIf="f.is_padre" class="text-xs text-blue-400 ml-2">📁 (Padre)</span>
-            <span *ngIf="f.padre_id" class="text-xs text-purple-400 ml-2">📄 (Hijo)</span>
-            <span *ngIf="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
-                  class="text-xs text-green-400 ml-2">✓ Ya asignado</span>
-          </label>
+           class="max-h-96 overflow-y-auto border border-white/10 rounded-xl p-4 space-y-4">
+        
+        <!-- Formularios padre con sus hijos -->
+        <div *ngFor="let padre of formulariosAgrupados.padres" class="space-y-2">
+          <div class="flex items-center gap-3 py-2 border-b border-white/5">
+            <input type="checkbox"
+                   [checked]="false"
+                   [disabled]="true"
+                   class="w-4 h-4 rounded border-white/20 bg-surface-900 text-brand-500 opacity-50 cursor-not-allowed">
+            <label class="flex-1">
+              <span class="font-semibold text-blue-400">📁 {{ padre.titulo_formulario }} (Padre)</span>
+              <span *ngIf="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), padre.id_formulario)"
+                    class="text-xs text-green-400 ml-2">✓ Ya asignado</span>
+            </label>
+          </div>
+          
+          <!-- Hijos del padre -->
+          <div *ngIf="padre.hijos.length > 0" class="ml-6 space-y-1">
+            <div *ngFor="let hijo of padre.hijos" class="flex items-center gap-3 py-1">
+              <input type="checkbox"
+                     [checked]="estaSeleccionadoBulk(hijo.id_formulario)"
+                     (change)="toggleFormularioBulk(hijo.id_formulario)"
+                     [disabled]="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), hijo.id_formulario)"
+                     class="w-4 h-4 rounded border-white/20 bg-surface-900 text-brand-500 focus:ring-brand-500 cursor-pointer">
+              <label class="flex-1 cursor-pointer">
+                <span class="font-medium">{{ hijo.titulo_formulario }}</span>
+                <span class="text-xs text-purple-400 ml-2">📄 (Hijo)</span>
+                <span *ngIf="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), hijo.id_formulario)"
+                      class="text-xs text-green-400 ml-2">✓ Ya asignado</span>
+              </label>
+            </div>
+          </div>
+          <div *ngIf="padre.hijos.length === 0" class="ml-6 text-xs text-yellow-400">
+            ⚠️ Este padre no tiene hijos asignables
+          </div>
+        </div>
+
+        <!-- Formularios independientes (sin padre) -->
+        <div *ngIf="formulariosAgrupados.independientes.length > 0" class="space-y-2 pt-2 border-t border-white/10">
+          <div *ngFor="let f of formulariosAgrupados.independientes" class="flex items-center gap-3 py-1">
+            <input type="checkbox"
+                   [checked]="estaSeleccionadoBulk(f.id_formulario)"
+                   (change)="toggleFormularioBulk(f.id_formulario)"
+                   [disabled]="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
+                   class="w-4 h-4 rounded border-white/20 bg-surface-900 text-brand-500 focus:ring-brand-500 cursor-pointer">
+            <label class="flex-1 cursor-pointer">
+              <span class="font-medium">{{ f.titulo_formulario }}</span>
+              <span *ngIf="form.value.id_rol && tienePermiso(toNumber(form.value.id_rol), f.id_formulario)"
+                    class="text-xs text-green-400 ml-2">✓ Ya asignado</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -123,16 +105,13 @@
         ⏳ Cargando formularios...
       </div>
 
-      <div *ngIf="!form.value.id_rol && !loadingFormularios" class="text-center text-textc-mute py-4">
-        👆 Selecciona un rol para ver los formularios disponibles
-      </div>
 
       <div *ngIf="form.value.id_rol && !loadingFormularios && formularios.length === 0" 
            class="text-center text-yellow-400 py-4 border border-yellow-500/20 rounded-xl bg-yellow-500/10">
         ⚠️ No hay formularios disponibles en la base de datos.
       </div>
 
-      <!-- Botón bulk -->
+      <!-- Botón -->
       <button type="button"
               [disabled]="saving || !form.value.id_rol || formulariosSeleccionados.size === 0"
               (click)="submitBulk()"

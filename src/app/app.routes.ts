@@ -71,6 +71,27 @@ export const routes: Routes = [
             (m) => m.TiposIdentificaciones,
           ),
       },
+      {
+        path: 'reporte-ventas',
+        loadComponent: () =>
+          import('./components/dashboard/pages/reporte-ventas/reporte-ventas').then(
+            (m) => m.ReporteVentas,
+          ),
+      },
+      {
+        path: 'reporte-compras',
+        loadComponent: () =>
+          import('./components/dashboard/pages/reporte-compras/reporte-compras').then(
+            (m) => m.ReporteCompras,
+          ),
+      },
+      {
+        path: 'reporte-inventario',
+        loadComponent: () =>
+          import('./components/dashboard/pages/reporte-inventario/reporte-inventario').then(
+            (m) => m.ReporteInventario,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
     ],
   },

@@ -13,7 +13,22 @@ import {
       ShieldCheck,
       Fingerprint,
       User,
-      Box 
+      Box,
+      ChevronDown,
+      ChevronRight,
+      Lock,
+      Warehouse,
+      Settings,
+      FileText,
+      Users,
+      Tag,
+      Package,
+      Apple,
+      Badge,
+      Crown,
+      Key,
+      BarChart,
+      LineChart
 
 } from "lucide-angular";
 
@@ -32,7 +47,22 @@ export function lucideProviders () {
       ShieldCheck,
       Fingerprint,
       User,
-      Box 
+      Box,
+      ChevronDown,
+      ChevronRight,
+      Lock,
+      Warehouse,
+      Settings,
+      FileText,
+      Users,
+      Tag,
+      Package,
+      Apple,
+      Badge,
+      Crown,
+      Key,
+      BarChart,
+      LineChart
     })
   );
 }
