@@ -7,11 +7,12 @@ import { ProductosService } from '../../../../shared/services/productos.service'
 import { MetodosPagoService, MetodoPago } from '../../../../shared/services/metodos-pago.service';
 import { Venta } from '../../../../shared/models/venta.model';
 import { Producto } from '../../../../shared/models/producto.model';
+import { AbonosModalComponent } from '../../modals/abonos-modal/abonos-modal.component';
 
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AbonosModalComponent],
   templateUrl: './ventas.html',
   styleUrl: './ventas.scss',
 })
@@ -35,6 +36,10 @@ export class Ventas implements OnInit {
 
   confirmOpen = false;
   private pendingDeleteId: number | null = null;
+
+  // Modal de abonos
+  mostrarModalAbonos = false;
+  ventaSeleccionada: Venta | null = null;
 
   private static readonly LIMITE_CANTIDAD = 6;
   private static readonly TOPE_TOTAL = 99_999_999;
@@ -525,5 +530,24 @@ export class Ventas implements OnInit {
   getProductosCompletos(venta: Venta): string {
     if (!venta.productos || venta.productos.length === 0) return 'Sin productos';
     return venta.productos.map((p) => `• ${p}`).join('\n');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 💰 MODAL DE ABONOS
+  // ═══════════════════════════════════════════════════════════
+
+  abrirModalAbonos(venta: Venta): void {
+    this.ventaSeleccionada = venta;
+    this.mostrarModalAbonos = true;
+  }
+
+  cerrarModalAbonos(abonoRegistrado: boolean): void {
+    this.mostrarModalAbonos = false;
+    this.ventaSeleccionada = null;
+
+    // Si se registró un abono, recargar la tabla para ver los cambios
+    if (abonoRegistrado) {
+      this.loadRows();
+    }
   }
 }

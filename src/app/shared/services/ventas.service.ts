@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { Venta, VentaDetalleItem } from '../models/venta.model';
+import { AbonosResponse } from '../models/abono.model';
 
 @Injectable({ providedIn: 'root' })
 export class VentasService {
@@ -27,7 +28,40 @@ export class VentasService {
     return this.http.post<{ venta?: any; message?: string; warnings?: any[] }>(this.base, body);
   }
 
-  eliminar(id: number): Observable<{ message?: string; warnings?: any[]; violations?: any[]; code?: string }> {
-    return this.http.delete<{ message?: string; warnings?: any[]; violations?: any[]; code?: string }>(`${this.base}/${id}`);
+  eliminar(
+    id: number,
+  ): Observable<{ message?: string; warnings?: any[]; violations?: any[]; code?: string }> {
+    return this.http.delete<{
+      message?: string;
+      warnings?: any[];
+      violations?: any[];
+      code?: string;
+    }>(`${this.base}/${id}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 💰 ABONOS
+  // ═══════════════════════════════════════════════════════════
+
+  obtenerAbonos(idVenta: number): Observable<AbonosResponse> {
+    return this.http.get<AbonosResponse>(`${this.base}/${idVenta}/abonos`);
+  }
+
+  registrarAbono(
+    idVenta: number,
+    body: {
+      id_metodo_pago: number;
+      monto: number;
+      observaciones?: string | null;
+    },
+  ): Observable<{
+    message?: string;
+    abono: any;
+    venta: any;
+  }> {
+    return this.http.post<{ message?: string; abono: any; venta: any }>(
+      `${this.base}/${idVenta}/abonos`,
+      body,
+    );
   }
 }
