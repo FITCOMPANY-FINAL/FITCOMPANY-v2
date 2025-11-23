@@ -10,8 +10,9 @@ export class VentasService {
   private http = inject(HttpClient);
   private base = `${environment.apiBaseUrl}/ventas`;
 
-  listar(): Observable<Venta[]> {
-    return this.http.get<Venta[]>(this.base);
+  listar(incluirEliminadas: boolean = false): Observable<Venta[]> {
+    const params = incluirEliminadas ? '?incluir_eliminadas=true' : '';
+    return this.http.get<Venta[]>(`${this.base}${params}`);
   }
 
   detalle(id: number): Observable<{ productos: VentaDetalleItem[] }> {

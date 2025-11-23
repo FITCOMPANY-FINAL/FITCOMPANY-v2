@@ -12,7 +12,7 @@ export interface Venta {
   es_fiado?: boolean;
   observaciones?: string | null;
   // Campos de soft delete (eliminación lógica)
-  activo?: boolean;
+  activo?: boolean | number; // Puede ser true/false (boolean) o 1/0 (number desde BD)
   eliminado_en?: string | null;
   eliminado_por?: string | null;
   motivo_eliminacion?: string | null; // Motivo por el cual se eliminó la venta

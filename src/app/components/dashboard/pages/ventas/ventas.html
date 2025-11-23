@@ -246,10 +246,10 @@
                     <tbody>
                         <tr *ngFor="let r of rows" class="border-b border-white/5 transition-colors"
                             [class.bg-yellow-500/5]="r.es_fiado && r.estado === 'PENDIENTE'"
-                            [class.bg-red-500/5]="r.activo === false"
-                            [class.hover:bg-surface-900/30]="r.activo !== false"
-                            [class.hover:bg-red-500/10]="r.activo === false"
-                            [class.opacity-70]="r.activo === false">
+                            [class.bg-red-500/5]="estaEliminada(r)"
+                            [class.hover:bg-surface-900/30]="estaActiva(r)"
+                            [class.hover:bg-red-500/10]="estaEliminada(r)"
+                            [class.opacity-70]="estaEliminada(r)">
                             <td class="px-4 py-3">
                                 <span class="font-mono text-xs text-brand-400">{{ r.folio }}</span>
                             </td>
@@ -278,17 +278,17 @@
                             <td class="px-4 py-3 text-sm text-gray-400">{{ r.fecha | date:'dd/MM/yy HH:mm' }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ r.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
                             <td class="px-4 py-3">
-                                <span *ngIf="r.activo === false" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">
+                                <span *ngIf="estaEliminada(r)" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">
                                     🗑️ ELIMINADA
                                 </span>
-                                <span *ngIf="r.activo !== false && !r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
+                                <span *ngIf="estaActiva(r) && !r.es_fiado" class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
                                     PAGADA
                                 </span>
-                                <span *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PENDIENTE'"
+                                <span *ngIf="estaActiva(r) && r.es_fiado && r.estado === 'PENDIENTE'"
                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-yellow-500/20 text-yellow-400">
                                     FIADA ({{ r.saldo_pendiente | currency:'COP':'symbol-narrow':'1.0-0' }})
                                 </span>
-                                <span *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PAGADA'"
+                                <span *ngIf="estaActiva(r) && r.es_fiado && r.estado === 'PAGADA'"
                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">
                                     PAGADA ✓
                                 </span>
@@ -301,21 +301,21 @@
                             <td class="px-4 py-3 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <!-- Botón Abonar (solo para ventas fiadas pendientes y activas) -->
-                                    <button *ngIf="r.activo !== false && r.es_fiado && r.estado === 'PENDIENTE'"
+                                    <button *ngIf="estaActiva(r) && r.es_fiado && r.estado === 'PENDIENTE'"
                                             class="px-3 py-1.5 text-xs font-semibold bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition"
                                             type="button"
                                             (click)="abrirModalAbonos(r)">
                                         💰 Abonar
                                     </button>
                                     <!-- Botón Eliminar (deshabilitado si ya está eliminado) -->
-                                    <button [disabled]="r.activo === false"
-                                            [class.opacity-50]="r.activo === false"
-                                            [class.cursor-not-allowed]="r.activo === false"
+                                    <button [disabled]="estaEliminada(r)"
+                                            [class.opacity-50]="estaEliminada(r)"
+                                            [class.cursor-not-allowed]="estaEliminada(r)"
                                             class="text-red-400 hover:text-red-300 font-semibold text-xs transition"
                                             type="button"
-                                            [title]="r.activo === false ? 'Esta venta ya está eliminada' : 'Eliminar venta'"
-                                            (click)="!( r.activo === false) && confirmarEliminar(r.id_venta)">
-                                        {{ r.activo === false ? '✓ Eliminada' : 'Eliminar' }}
+                                            [title]="estaEliminada(r) ? 'Esta venta ya está eliminada' : 'Eliminar venta'"
+                                            (click)="!estaEliminada(r) && confirmarEliminar(r.id_venta)">
+                                        {{ estaEliminada(r) ? '✓ Eliminada' : 'Eliminar' }}
                                     </button>
                                 </div>
                             </td>
@@ -336,15 +336,23 @@
             <p class="text-sm text-textc-mute">¿Seguro que deseas eliminar esta venta?</p>
 
             <div class="mt-4">
-                <label class="block text-sm font-semibold mb-2">Motivo (opcional)</label>
+                <label class="block text-sm font-semibold mb-2">
+                    Motivo <span class="text-red-400">*</span> (obligatorio, mínimo 5 caracteres)
+                </label>
                 <textarea
                     [(ngModel)]="motivoEliminacion"
                     placeholder="Ej: Error de registro, venta duplicada, cliente rechazó..."
                     class="w-full rounded-lg bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-red-500 text-sm resize-none"
+                    [class.border-red-500]="motivoEliminacion.trim().length < 5 && motivoEliminacion.length > 0"
                     rows="3"
                     maxlength="500"></textarea>
-                <div class="text-xs text-textc-mute mt-1">
-                    {{ motivoEliminacion.length }}/500 caracteres
+                <div class="flex justify-between text-xs mt-1">
+                    <span [class.text-red-400]="motivoEliminacion.trim().length < 5">
+                        {{ motivoEliminacion.length }}/500 caracteres
+                    </span>
+                    <span *ngIf="motivoEliminacion.trim().length < 5 && motivoEliminacion.length > 0" class="text-red-400">
+                        ⚠️ Mínimo 5 caracteres
+                    </span>
                 </div>
             </div>
 

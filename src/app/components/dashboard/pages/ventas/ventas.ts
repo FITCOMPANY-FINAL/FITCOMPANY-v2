@@ -158,7 +158,8 @@ export class Ventas implements OnInit {
   }
 
   loadRows() {
-    this.ventasSrv.listar().subscribe({
+    // Cargar todas las ventas (activas y eliminadas)
+    this.ventasSrv.listar(true).subscribe({
       next: (rows) => {
         this.rowsOriginales = rows || [];
         this.actualizarFiltroPantalla();
@@ -173,16 +174,26 @@ export class Ventas implements OnInit {
   actualizarFiltroPantalla() {
     if (this.mostrarEliminadas) {
       // Mostrar solo las eliminadas
-      this.rows = this.rowsOriginales.filter((r) => r.activo === false);
+      this.rows = this.rowsOriginales.filter((r) => this.estaEliminada(r));
     } else {
       // Mostrar solo las activas
-      this.rows = this.rowsOriginales.filter((r) => r.activo !== false);
+      this.rows = this.rowsOriginales.filter((r) => this.estaActiva(r));
     }
   }
 
   toggleMostrarEliminadas() {
     this.mostrarEliminadas = !this.mostrarEliminadas;
     this.actualizarFiltroPantalla();
+  }
+
+  // Helper para verificar si una venta está eliminada
+  estaEliminada(venta: any): boolean {
+    return !venta.activo || venta.activo === false || venta.activo === 0;
+  }
+
+  // Helper para verificar si una venta está activa
+  estaActiva(venta: any): boolean {
+    return venta.activo === true || venta.activo === 1;
   }
 
   // ---------- líneas ----------
@@ -509,8 +520,15 @@ export class Ventas implements OnInit {
       this.closeConfirm();
       return;
     }
+
+    // Validar que el motivo sea obligatorio
+    const motivo = this.motivoEliminacion.trim();
+    if (!motivo || motivo.length < 5) {
+      this.showError('❌ El motivo de eliminación es obligatorio (mínimo 5 caracteres)');
+      return;
+    }
+
     const id = this.pendingDeleteId;
-    const motivo = this.motivoEliminacion.trim() || null;
     this.closeConfirm();
 
     this.ventasSrv.eliminar(id, motivo).subscribe({
