@@ -55,7 +55,10 @@ export class Sidebar implements OnInit {
   }
 
   private loadMenuFromToken() {
-    const formularios = this.auth.getFormulariosFromToken();
+    let formularios = this.auth.getFormulariosFromToken();
+
+    // Filtrar y eliminar "Formularios" del menú
+    formularios = formularios.filter((f) => f.titulo !== 'Formularios');
 
     // Agregar Dashboard al inicio como un item sin hijos
     const dashboardItem: MenuItem = {
