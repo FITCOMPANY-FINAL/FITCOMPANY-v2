@@ -231,16 +231,19 @@
 
             <div *ngIf="rows.length > 0" class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-surface-900/60">
+                    <thead class="bg-surface-900/60 sticky top-0">
                         <tr class="border-b border-white/5">
-                            <th class="px-4 py-3">Folio</th>
-                            <th class="px-4 py-3">Productos</th>
-                            <th class="px-4 py-3">Fecha</th>
-                            <th class="px-4 py-3 text-right">Total</th>
-                            <th class="px-4 py-3">Estado</th>
-                            <th class="px-4 py-3">Cliente</th>
-                            <th class="px-4 py-3">Usuario</th>
-                            <th class="px-4 py-3 text-center">Acciones</th>
+                            <th class="px-4 py-3 min-w-[80px]">Folio</th>
+                            <th class="px-4 py-3 min-w-[200px]">Productos</th>
+                            <th class="px-4 py-3 min-w-[120px]">Fecha</th>
+                            <th class="px-4 py-3 text-right min-w-[100px]">Total</th>
+                            <th class="px-4 py-3 min-w-[100px]">Estado</th>
+                            <!-- Columna Motivo - Solo si mostrando eliminadas -->
+                            <th *ngIf="mostrarEliminadas" class="px-4 py-3 min-w-[180px]">Motivo</th>
+                            <th class="px-4 py-3 min-w-[150px]">Cliente</th>
+                            <th class="px-4 py-3 min-w-[120px]">Usuario</th>
+                            <!-- Columna Acciones - Solo si mostrando activas -->
+                            <th *ngIf="!mostrarEliminadas" class="px-4 py-3 text-center min-w-[100px]">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -293,29 +296,49 @@
                                     PAGADA ✓
                                 </span>
                             </td>
+                            <!-- Columna Motivo - Solo si mostrando eliminadas -->
+                            <td *ngIf="mostrarEliminadas" class="px-4 py-3 text-sm">
+                                <div class="relative group inline-block w-full">
+                                    <!-- Motivo -->
+                                    <span *ngIf="r.motivo_eliminacion"
+                                          class="text-red-300 truncate max-w-xs inline-block cursor-help">
+                                        {{ r.motivo_eliminacion.length > 40 ? (r.motivo_eliminacion | slice:0:40) + '...' : r.motivo_eliminacion }}
+                                    </span>
+                                    <span *ngIf="!r.motivo_eliminacion"
+                                          class="text-gray-500 italic">
+                                        Sin especificar
+                                    </span>
+
+                                    <!-- Tooltip con motivo completo -->
+                                    <div *ngIf="r.motivo_eliminacion && r.motivo_eliminacion.length > 40"
+                                         class="absolute left-0 top-full mt-1 w-64 p-3 rounded-lg bg-red-900/80 border border-red-500/50
+                                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50
+                                                pointer-events-none text-xs text-red-100">
+                                        {{ r.motivo_eliminacion }}
+                                    </div>
+                                </div>
+                            </td>
                             <td class="px-4 py-3 text-sm">
                                 <span *ngIf="r.cliente_desc">{{ r.cliente_desc }}</span>
                                 <span *ngIf="!r.cliente_desc" class="text-gray-500">-</span>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-400">{{ r.usuario }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <!-- Columna Acciones - Solo si mostrando activas -->
+                            <td *ngIf="!mostrarEliminadas" class="px-4 py-3 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <!-- Botón Abonar (solo para ventas fiadas pendientes y activas) -->
-                                    <button *ngIf="estaActiva(r) && r.es_fiado && r.estado === 'PENDIENTE'"
+                                    <button *ngIf="r.es_fiado && r.estado === 'PENDIENTE'"
                                             class="px-3 py-1.5 text-xs font-semibold bg-brand-500/20 text-brand-400 rounded-lg hover:bg-brand-500/30 transition"
                                             type="button"
                                             (click)="abrirModalAbonos(r)">
                                         💰 Abonar
                                     </button>
-                                    <!-- Botón Eliminar (deshabilitado si ya está eliminado) -->
-                                    <button [disabled]="estaEliminada(r)"
-                                            [class.opacity-50]="estaEliminada(r)"
-                                            [class.cursor-not-allowed]="estaEliminada(r)"
-                                            class="text-red-400 hover:text-red-300 font-semibold text-xs transition"
+                                    <!-- Botón Eliminar -->
+                                    <button class="text-red-400 hover:text-red-300 font-semibold text-xs transition"
                                             type="button"
-                                            [title]="estaEliminada(r) ? 'Esta venta ya está eliminada' : 'Eliminar venta'"
-                                            (click)="!estaEliminada(r) && confirmarEliminar(r.id_venta)">
-                                        {{ estaEliminada(r) ? '✓ Eliminada' : 'Eliminar' }}
+                                            title="Eliminar venta"
+                                            (click)="confirmarEliminar(r.id_venta)">
+                                        Eliminar
                                     </button>
                                 </div>
                             </td>
