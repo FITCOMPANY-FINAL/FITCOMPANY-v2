@@ -5,7 +5,7 @@
     "tailwind:init": "tailwindcss init -p",
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:dist": "http-server dist/fitcompany-angular -p $PORT"
