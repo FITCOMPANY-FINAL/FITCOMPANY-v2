@@ -107,30 +107,50 @@ export class Sidebar implements OnInit {
           .map((h) => {
             // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
             let urlPath = h.url?.replace('/dashboard/', '') || '';
+            
+            // Limpiar posibles barras al inicio o final
+            urlPath = urlPath.trim().replace(/^\/+|\/+$/g, '');
 
             // Normalizar rutas que pueden tener variaciones
-            if (urlPath === 'unidades-medida') {
-              urlPath = 'unidades-medidas'; // La ruta real en Angular
+            // Unidades de medida
+            if (urlPath === 'unidades-medida' || urlPath.includes('unidad-medida')) {
+              urlPath = 'unidades-medidas';
             }
-            if (urlPath === 'tipos-identificacion') {
-              urlPath = 'tipos-identificaciones'; // La ruta real en Angular
+            
+            // Tipos de identificación - la URL viene como "tipos-identificaciones" (correcta)
+            if (urlPath === 'tipos-identificacion' || 
+                urlPath === 'tipos-identificaciones' ||
+                urlPath.includes('tipo-identificacion')) {
+              urlPath = 'tipos-identificaciones';
             }
-            // Normalizar rutas de reportes
-            if (urlPath === 'reportes/ventas') {
+            
+            // Normalizar rutas de reportes - las URLs vienen como "reportes/ventas", "reportes/compras", "reportes/inventario"
+            if (urlPath === 'reportes/ventas' || 
+                urlPath === 'reporte-ventas' ||
+                (urlPath.includes('reporte') && urlPath.includes('venta'))) {
               urlPath = 'reporte-ventas';
-            }
-            if (urlPath === 'reportes/compras') {
+            } else if (urlPath === 'reportes/compras' || 
+                urlPath === 'reporte-compras' ||
+                (urlPath.includes('reporte') && urlPath.includes('compra'))) {
               urlPath = 'reporte-compras';
-            }
-            if (urlPath === 'reportes/inventario') {
+            } else if (urlPath === 'reportes/inventario' || 
+                urlPath === 'reporte-inventario' ||
+                (urlPath.includes('reporte') && urlPath.includes('inventario'))) {
               urlPath = 'reporte-inventario';
             }
 
+            // Debug: mostrar URL original y normalizada para casos problemáticos
+            if (h.url && (h.url.includes('identificacion') || h.url.includes('reporte'))) {
+              console.log(`🔍 Normalizando: "${h.url}" -> urlPath: "${urlPath}" -> link: "/dashboard/${urlPath}"`);
+            }
+
+            const finalLink = urlPath ? `/dashboard/${urlPath}` : null;
+            
             return {
               id: `hijo-${h.id || h.titulo}`,
               label: h.titulo,
               icon: this.getIconForUrl(h.url || ''),
-              link: urlPath ? `/dashboard/${urlPath}` : null,
+              link: finalLink,
             };
           })
           // Eliminar duplicados por link o label
@@ -252,3 +272,4 @@ export class Sidebar implements OnInit {
     return this.expandedItems.has(itemId);
   }
 }
+
