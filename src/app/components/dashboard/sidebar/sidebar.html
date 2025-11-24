@@ -34,7 +34,7 @@
         >
           <li *ngFor="let hijo of item.hijos">
             <a
-              [routerLink]="hijo.link"
+              [routerLink]="hijo.link.split('/')"
               routerLinkActive="bg-surface-800 text-white"
               class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors"
             >
@@ -47,7 +47,7 @@
       <!-- Item sin hijos (si no tiene estructura jerárquica) -->
       <a
         *ngIf="!item.hijos || item.hijos.length === 0"
-        [routerLink]="[item.link]"
+        [routerLink]="item.link.split('/')"
         routerLinkActive="bg-surface-800 text-white"
         class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors"
       >
