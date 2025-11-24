@@ -26,8 +26,10 @@
         <ul *ngIf="isExpanded(item.id)" 
             class="ml-8 mt-1 space-y-1 transition-all duration-200 ease-in-out">
           <li *ngFor="let hijo of item.hijos">
-            <a [routerLink]="hijo.link ? [hijo.link] : null" 
+            <a [routerLink]="hijo.link" 
                routerLinkActive="bg-surface-800 text-white"
+               [class.pointer-events-none]="!hijo.link"
+               [class.opacity-50]="!hijo.link"
                class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
               <lucide-icon [name]="hijo.icon" class="w-5 h-5"></lucide-icon>
               <span>{{ hijo.label }}</span>
@@ -37,8 +39,10 @@
       </div>
       <!-- Item sin hijos (si no tiene estructura jerárquica) -->
       <a *ngIf="!item.hijos || item.hijos.length === 0" 
-         [routerLink]="item.link ? [item.link] : null" 
+         [routerLink]="item.link" 
          routerLinkActive="bg-surface-800 text-white"
+         [class.pointer-events-none]="!item.link"
+         [class.opacity-50]="!item.link"
          class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
         <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
         <span>{{ item.label }}</span>

@@ -81,7 +81,7 @@ export class Sidebar implements OnInit {
       id: 'dashboard',
       label: 'Dashboard',
       icon: 'LayoutDashboard',
-      link: 'overview',
+      link: '/dashboard/overview',
       hijos: [],
     };
 
@@ -130,7 +130,7 @@ export class Sidebar implements OnInit {
               id: `hijo-${h.id || h.titulo}`,
               label: h.titulo,
               icon: this.getIconForUrl(h.url || ''),
-              link: urlPath,
+              link: urlPath ? `/dashboard/${urlPath}` : null,
             };
           })
           // Eliminar duplicados por link o label
