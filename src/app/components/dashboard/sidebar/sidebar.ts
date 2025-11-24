@@ -113,8 +113,11 @@ export class Sidebar implements OnInit {
             if (padre.titulo === 'Reportes' || padre.titulo?.includes('Reporte')) {
               console.log(`🔍 Procesando hijo de Reportes: "${h.titulo}" con URL: "${h.url}"`);
             }
-            // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
-            let urlPath = h.url?.replace('/dashboard/', '') || '';
+            // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas" o "/reportes/inventario" -> "reportes/inventario")
+            let urlPath = h.url || '';
+            
+            // Remover /dashboard/ si existe
+            urlPath = urlPath.replace('/dashboard/', '');
             
             // Limpiar posibles barras al inicio o final
             urlPath = urlPath.trim().replace(/^\/+|\/+$/g, '');
@@ -132,20 +135,20 @@ export class Sidebar implements OnInit {
               urlPath = 'tipos-identificaciones';
             }
             
-            // Normalizar rutas de reportes - las URLs vienen como "reportes/ventas", "reportes/compras", "reportes/inventario"
-            // Verificar primero por coincidencia exacta, luego por palabras clave
-            if (urlPath === 'reportes/ventas' || 
+            // Normalizar rutas de reportes - IMPORTANTE: verificar inventario ANTES que ventas/compras
+            // porque "reportes/inventario" contiene "reporte" y podría coincidir con otras condiciones
+            if (urlPath === 'reportes/inventario' || 
+                urlPath === 'reporte-inventario' ||
+                (urlPath.includes('reporte') && urlPath.includes('inventario'))) {
+              urlPath = 'reporte-inventario';
+            } else if (urlPath === 'reportes/ventas' || 
                 urlPath === 'reporte-ventas' ||
-                urlPath.startsWith('reporte') && urlPath.includes('venta')) {
+                (urlPath.includes('reporte') && urlPath.includes('venta'))) {
               urlPath = 'reporte-ventas';
             } else if (urlPath === 'reportes/compras' || 
                 urlPath === 'reporte-compras' ||
-                urlPath.startsWith('reporte') && urlPath.includes('compra')) {
+                (urlPath.includes('reporte') && urlPath.includes('compra'))) {
               urlPath = 'reporte-compras';
-            } else if (urlPath === 'reportes/inventario' || 
-                urlPath === 'reporte-inventario' ||
-                urlPath.startsWith('reporte') && urlPath.includes('inventario')) {
-              urlPath = 'reporte-inventario';
             }
 
             // Debug: mostrar URL original y normalizada para TODOS los reportes
