@@ -1,7 +1,8 @@
 <!-- Sidebar oscuro, diferencia clara con el contenido -->
-<nav class="fixed left-0 top-0 h-screen w-64 bg-surface-900 text-textc-base border-r border-white/5 flex flex-col z-50"
-  aria-label="Sidebar principal">
-
+<nav
+  class="fixed left-0 top-0 h-screen w-64 bg-surface-900 text-textc-base border-r border-white/5 flex flex-col z-50"
+  aria-label="Sidebar principal"
+>
   <!-- Header / Logo -->
   <div class="h-16 flex items-center px-4 border-b border-white/5">
     <a class="flex items-center gap-2 font-extrabold tracking-tight">
@@ -15,20 +16,28 @@
     <li *ngFor="let item of menu" class="mb-1">
       <!-- Padre (si tiene hijos) -->
       <div *ngIf="item.hijos && item.hijos.length > 0" class="mx-2">
-        <div (click)="toggleExpanded(item.id, $event)" 
-             class="flex items-center gap-3 px-3 py-2 rounded-lg text-textc-mute font-semibold hover:bg-surface-800 cursor-pointer transition-colors">
+        <div
+          (click)="toggleExpanded(item.id, $event)"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-textc-mute font-semibold hover:bg-surface-800 cursor-pointer transition-colors"
+        >
           <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
           <span class="flex-1">{{ item.label }}</span>
-          <lucide-icon [name]="isExpanded(item.id) ? 'ChevronDown' : 'ChevronRight'" 
-                       class="w-4 h-4 transition-transform duration-200"></lucide-icon>
+          <lucide-icon
+            [name]="isExpanded(item.id) ? 'ChevronDown' : 'ChevronRight'"
+            class="w-4 h-4 transition-transform duration-200"
+          ></lucide-icon>
         </div>
         <!-- Hijos del padre -->
-        <ul *ngIf="isExpanded(item.id)" 
-            class="ml-8 mt-1 space-y-1 transition-all duration-200 ease-in-out">
+        <ul
+          *ngIf="isExpanded(item.id)"
+          class="ml-8 mt-1 space-y-1 transition-all duration-200 ease-in-out"
+        >
           <li *ngFor="let hijo of item.hijos">
-            <a [routerLink]="hijo.link ? [hijo.link] : null" 
-               routerLinkActive="bg-surface-800 text-white"
-               class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
+            <a
+              [routerLink]="hijo.link"
+              routerLinkActive="bg-surface-800 text-white"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors"
+            >
               <lucide-icon [name]="hijo.icon" class="w-5 h-5"></lucide-icon>
               <span>{{ hijo.label }}</span>
             </a>
@@ -36,10 +45,12 @@
         </ul>
       </div>
       <!-- Item sin hijos (si no tiene estructura jerárquica) -->
-      <a *ngIf="!item.hijos || item.hijos.length === 0" 
-         [routerLink]="item.link ? [item.link] : null" 
-         routerLinkActive="bg-surface-800 text-white"
-         class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors">
+      <a
+        *ngIf="!item.hijos || item.hijos.length === 0"
+        [routerLink]="[item.link]"
+        routerLinkActive="bg-surface-800 text-white"
+        class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg hover:bg-surface-800 transition-colors"
+      >
         <lucide-icon [name]="item.icon" class="w-5 h-5"></lucide-icon>
         <span>{{ item.label }}</span>
       </a>
@@ -53,17 +64,17 @@
       <div class="text-sm font-semibold text-white truncate" [title]="usuario.nombre">
         {{ usuario.nombre || 'Sin nombre' }}
       </div>
-      <div class="text-xs text-textc-mute truncate" [title]="usuario.rol">
-        {{ usuario.rol }}
-      </div>
+      <div class="text-xs text-textc-mute truncate" [title]="usuario.rol">{{ usuario.rol }}</div>
       <div class="text-xs text-textc-mute truncate" [title]="usuario.correo">
         {{ usuario.correo }}
       </div>
     </div>
-    
+
     <!-- Botón cerrar sesión -->
-    <button class="w-full rounded-lg bg-brand-600/10 text-brand-500 px-3 py-2 text-sm
-                   hover:bg-brand-600/20 transition" (click)="openLogoutConfirm()">
+    <button
+      class="w-full rounded-lg bg-brand-600/10 text-brand-500 px-3 py-2 text-sm hover:bg-brand-600/20 transition"
+      (click)="openLogoutConfirm()"
+    >
       Cerrar sesión
     </button>
   </div>
@@ -73,17 +84,25 @@
 <div *ngIf="logoutConfirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
   <div class="absolute inset-0 bg-black/60"></div>
 
-  <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+  <div
+    class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl"
+  >
     <h3 class="text-lg font-semibold mb-2">Confirmar acción</h3>
     <p class="text-sm text-textc-mute">¿Seguro que deseas cerrar sesión?</p>
 
     <div class="mt-6 flex gap-3 justify-end">
-      <button type="button" class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
-        (click)="closeLogoutConfirm()">
+      <button
+        type="button"
+        class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
+        (click)="closeLogoutConfirm()"
+      >
         Cancelar
       </button>
-      <button type="button" class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600"
-        (click)="doLogoutConfirmado()">
+      <button
+        type="button"
+        class="rounded-xl bg-brand-500 text-black font-semibold px-4 py-2 hover:bg-brand-600"
+        (click)="doLogoutConfirmado()"
+      >
         Aceptar
       </button>
     </div>

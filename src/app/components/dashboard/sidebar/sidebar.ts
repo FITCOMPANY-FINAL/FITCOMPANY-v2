@@ -34,11 +34,11 @@ const ICON_MAP: { [key: string]: string } = {
 
 // Mapeo de títulos de padres a iconos específicos
 const PADRE_ICON_MAP: { [key: string]: string } = {
-  'Seguridad': 'Lock',
-  'Inventario': 'Warehouse',
-  'Operaciones': 'Settings',
-  'Reportes': 'FileText',
-  'Gestión de Usuarios': 'Users',
+  Administración: 'Settings',
+  Seguridad: 'Lock',
+  Inventario: 'Warehouse',
+  Operaciones: 'ShoppingCart',
+  Reportes: 'FileText',
 };
 
 @Component({
@@ -87,15 +87,17 @@ export class Sidebar implements OnInit {
 
     // Separar padres e hijos
     const padres = formularios.filter((f) => f.es_padre).sort((a, b) => a.orden - b.orden);
-    
+
     // Filtrar hijos y eliminar duplicados por URL o título
     const hijos = formularios
       .filter((f) => !f.es_padre && f.url)
-      .filter((f, index, self) => 
-        index === self.findIndex((h) => 
-          (h.url && f.url && h.url === f.url) || 
-          (h.titulo === f.titulo && h.padre === f.padre)
-        )
+      .filter(
+        (f, index, self) =>
+          index ===
+          self.findIndex(
+            (h) =>
+              (h.url && f.url && h.url === f.url) || (h.titulo === f.titulo && h.padre === f.padre),
+          ),
       );
 
     // Construir estructura jerárquica
@@ -130,12 +132,13 @@ export class Sidebar implements OnInit {
               id: `hijo-${h.id || h.titulo}`,
               label: h.titulo,
               icon: this.getIconForUrl(h.url || ''),
-              link: urlPath,
+              link: `/dashboard/${urlPath}`,
             };
           })
           // Eliminar duplicados por link o label
-          .filter((item, index, self) => 
-            index === self.findIndex((h) => h.link === item.link || h.label === item.label)
+          .filter(
+            (item, index, self) =>
+              index === self.findIndex((h) => h.link === item.link || h.label === item.label),
           )
           .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
 
@@ -145,7 +148,7 @@ export class Sidebar implements OnInit {
         }
 
         const padreId = `padre-${padre.id || padre.titulo}`;
-        
+
         // Inicializar como expandido por defecto
         this.expandedItems.add(padreId);
 
@@ -239,7 +242,7 @@ export class Sidebar implements OnInit {
       event.stopPropagation();
       event.preventDefault();
     }
-    
+
     if (this.expandedItems.has(itemId)) {
       this.expandedItems.delete(itemId);
     } else {
