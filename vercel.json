@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/fitcompany-angular",
+  "outputDirectory": "./dist/fitcompany-angular",
   "rewrites": [
     {
       "source": "/(.*)",
