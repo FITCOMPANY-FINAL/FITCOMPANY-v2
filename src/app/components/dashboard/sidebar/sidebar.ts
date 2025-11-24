@@ -125,23 +125,24 @@ export class Sidebar implements OnInit {
             }
             
             // Normalizar rutas de reportes - las URLs vienen como "reportes/ventas", "reportes/compras", "reportes/inventario"
+            // Verificar primero por coincidencia exacta, luego por palabras clave
             if (urlPath === 'reportes/ventas' || 
                 urlPath === 'reporte-ventas' ||
-                (urlPath.includes('reporte') && urlPath.includes('venta'))) {
+                urlPath.startsWith('reporte') && urlPath.includes('venta')) {
               urlPath = 'reporte-ventas';
             } else if (urlPath === 'reportes/compras' || 
                 urlPath === 'reporte-compras' ||
-                (urlPath.includes('reporte') && urlPath.includes('compra'))) {
+                urlPath.startsWith('reporte') && urlPath.includes('compra')) {
               urlPath = 'reporte-compras';
             } else if (urlPath === 'reportes/inventario' || 
                 urlPath === 'reporte-inventario' ||
-                (urlPath.includes('reporte') && urlPath.includes('inventario'))) {
+                urlPath.startsWith('reporte') && urlPath.includes('inventario')) {
               urlPath = 'reporte-inventario';
             }
 
-            // Debug: mostrar URL original y normalizada para casos problemáticos
-            if (h.url && (h.url.includes('identificacion') || h.url.includes('reporte'))) {
-              console.log(`🔍 Normalizando: "${h.url}" -> urlPath: "${urlPath}" -> link: "/dashboard/${urlPath}"`);
+            // Debug: mostrar URL original y normalizada para TODOS los reportes
+            if (h.url && h.url.includes('reporte')) {
+              console.log(`🔍 [REPORTE] Normalizando: "${h.url}" -> urlPath: "${urlPath}" -> link: "/dashboard/${urlPath}"`);
             }
 
             const finalLink = urlPath ? `/dashboard/${urlPath}` : null;

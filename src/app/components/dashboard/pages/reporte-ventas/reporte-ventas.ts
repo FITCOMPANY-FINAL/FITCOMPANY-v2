@@ -147,11 +147,19 @@ export class ReporteVentas implements OnInit {
       next: (data) => {
         this.datos = data;
         this.loading = false;
+        this.errorMsg = '';
       },
       error: (err) => {
-        console.error('Error al cargar reporte:', err);
-        this.errorMsg = err.error?.message || 'Error al cargar el reporte de ventas';
+        console.error('Error al cargar reporte de ventas:', err);
+        console.error('Detalles del error:', {
+          status: err.status,
+          statusText: err.statusText,
+          error: err.error,
+          message: err.message
+        });
+        this.errorMsg = err.error?.message || err.message || 'Error al generar reporte de ventas.';
         this.loading = false;
+        this.datos = null;
       },
     });
   }
