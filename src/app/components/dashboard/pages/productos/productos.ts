@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
+import { AlertsService } from '../../../../shared/services/alerts.service';
 
 interface Producto {
   id_producto: number;
@@ -44,6 +45,7 @@ interface Categoria {
 export class Productos implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
+  private alertsService = inject(AlertsService);
   private API = environment.apiBaseUrl;
 
   // datos
@@ -278,6 +280,8 @@ export class Productos implements OnInit {
           this.showOk(res?.message || (this.editando ? 'Producto actualizado.' : 'Producto creado.'));
           this.loadData();
           this.resetForm();
+          this.alertsService.refresh(); // Refrescar alertas después de crear/editar
+          window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
@@ -351,6 +355,8 @@ export class Productos implements OnInit {
       next: (res) => {
         this.showOk(res?.message || 'Producto eliminado correctamente.');
         this.loadData();
+        this.alertsService.refresh(); // Refrescar alertas después de eliminar
+        window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
       },
       error: (e) => {
         this.showError(e?.error?.message || 'No se pudo eliminar el producto.');

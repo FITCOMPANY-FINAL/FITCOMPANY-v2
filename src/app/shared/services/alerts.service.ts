@@ -22,15 +22,15 @@ export class AlertsService {
     private alertsSub = new BehaviorSubject<AlertItem[]>([]);
     alerts$: Observable<AlertItem[]> = this.alertsSub.asObservable();
 
-    private pollTimer: any = null;
-
     constructor() {
+        // Cargar alertas iniciales al iniciar el servicio
         this.refresh();
 
-        this.pollTimer = setInterval(() => this.refresh(), 6000);
-
+        // Refrescar cuando la pestaña se vuelve visible (por si hubo cambios en otra pestaña)
         const onVisible = () => {
-            if (document.visibilityState === 'visible') this.refresh();
+            if (document.visibilityState === 'visible') {
+                this.refresh();
+            }
         };
         document.addEventListener('visibilitychange', onVisible);
     }

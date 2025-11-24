@@ -1,14 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ComprasService } from '../../../../shared/services/compras.service';
-import { VentasService } from '../../../../shared/services/ventas.service';
-import { ProductosService } from '../../../../shared/services/productos.service';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../../../environments/environment';
 
 interface Actividad {
-  tipo: 'compra' | 'venta';
+  tipo: 'compra' | 'venta' | 'producto' | 'compra_eliminada' | 'venta_eliminada' | 'producto_eliminado';
   descripcion: string;
-  fecha: string;
+  fecha: string; // Fecha formateada para mostrar
+  fechaOriginal: string; // Fecha original para ordenar
   icono: string;
 }
 
@@ -29,11 +29,10 @@ interface Modulo {
   templateUrl: './overview.html',
   styleUrl: './overview.scss',
 })
-export class Overview implements OnInit {
-  private comprasSrv = inject(ComprasService);
-  private ventasSrv = inject(VentasService);
-  private productosSrv = inject(ProductosService);
+export class Overview implements OnInit, OnDestroy {
+  private http = inject(HttpClient);
   private router = inject(Router);
+  private API = environment.apiBaseUrl;
 
   // Estado y rol
   esAdmin = false;
@@ -115,6 +114,18 @@ export class Overview implements OnInit {
     this.detectarRol();
     this.cargarModulosDisponibles();
     this.cargarDatos();
+    
+    // Escuchar eventos de actualización desde otros componentes
+    window.addEventListener('dashboard:refresh', () => {
+      this.cargarDatos();
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar listener
+    window.removeEventListener('dashboard:refresh', () => {
+      this.cargarDatos();
+    });
   }
 
   /**
@@ -122,7 +133,7 @@ export class Overview implements OnInit {
    */
   private cargarModulosDisponibles(): void {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fit_token');
       if (!token) {
         this.modulosDisponibles = [];
         return;
@@ -183,7 +194,7 @@ export class Overview implements OnInit {
    */
   private detectarRol(): void {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fit_token');
       if (!token) {
         this.esAdmin = false;
         this.nombreUsuario = 'Usuario';
@@ -200,11 +211,20 @@ export class Overview implements OnInit {
 
       const payload = JSON.parse(atob(partes[1]));
 
-      // Obtener nombre del usuario
-      this.nombreUsuario = payload.nombre_usuario || payload.user || 'Usuario';
+      // Construir nombre completo del usuario
+      const nombres = payload.nombres || '';
+      const apellido1 = payload.apellido1 || '';
+      const apellido2 = payload.apellido2 || '';
+      
+      if (nombres || apellido1) {
+        this.nombreUsuario = [nombres, apellido1, apellido2].filter(Boolean).join(' ').trim();
+      } else {
+        this.nombreUsuario = payload.nombre_usuario || payload.user || 'Usuario';
+      }
 
       // Detectar si es admin (buscar en rol o id_rol)
-      this.esAdmin = payload.rol === 'admin' || payload.id_rol === 1;
+      // Forzar versión simple del dashboard (no admin)
+      this.esAdmin = false; // Siempre mostrar versión simple
     } catch (error) {
       console.error('Error decodificando token:', error);
       this.esAdmin = false;
@@ -213,47 +233,32 @@ export class Overview implements OnInit {
   }
 
   /**
-   * Carga todos los datos necesarios
+   * Carga todos los datos necesarios desde el endpoint del dashboard
    */
   private cargarDatos(): void {
     this.cargando = true;
 
-    // Cargar productos
-    this.productosSrv.listar().subscribe({
-      next: (productos) => {
-        this.totalProductos = productos?.length || 0;
+    // Cargar datos del dashboard desde el backend
+    this.http.get<any>(`${this.API}/reportes/dashboard`).subscribe({
+      next: (data) => {
+        // Datos del dashboard
+        this.totalProductos = data.inventario?.total_productos || 0;
+        this.comprasHoy = data.resumen_hoy?.compras?.cantidad || 0;
+        this.ventasHoy = data.resumen_hoy?.ventas?.cantidad || 0;
+        this.totalCompras = data.resumen_mes?.compras?.cantidad || 0;
+        this.totalVentas = data.resumen_mes?.ventas?.cantidad || 0;
+
+        // Cargar actividades recientes desde compras y ventas
+        this.cargarActividadesRecientes();
+        
+        this.cargando = false;
       },
       error: (err) => {
-        console.error('Error cargando productos:', err);
+        console.error('Error cargando dashboard:', err);
         this.totalProductos = 0;
-      },
-    });
-
-    // Cargar compras
-    this.comprasSrv.listar().subscribe({
-      next: (compras: any[]) => {
-        this.totalCompras = compras?.length || 0;
-        this.comprasHoy = this.contarTransaccionesHoy(compras, 'fecha_compra');
-        this.agregarActividadesCompras(compras);
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error cargando compras:', err);
+        this.comprasHoy = 0;
+        this.ventasHoy = 0;
         this.totalCompras = 0;
-        this.cargando = false;
-      },
-    });
-
-    // Cargar ventas
-    this.ventasSrv.listar().subscribe({
-      next: (ventas: any[]) => {
-        this.totalVentas = ventas?.length || 0;
-        this.ventasHoy = this.contarTransaccionesHoy(ventas, 'fecha');
-        this.agregarActividadesVentas(ventas);
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error cargando ventas:', err);
         this.totalVentas = 0;
         this.cargando = false;
       },
@@ -261,57 +266,108 @@ export class Overview implements OnInit {
   }
 
   /**
-   * Cuenta transacciones que ocurrieron hoy
+   * Carga las actividades recientes desde compras, ventas y productos
    */
-  private contarTransaccionesHoy(registros: any[], campoFecha: string): number {
-    if (!registros || registros.length === 0) return 0;
-
-    const hoy = new Date().toDateString();
-    return registros.filter((r) => {
-      try {
-        const fecha = r[campoFecha];
-        return new Date(fecha).toDateString() === hoy;
-      } catch {
-        return false;
-      }
-    }).length;
-  }
-
-  /**
-   * Agrega actividades de compras al listado
-   */
-  private agregarActividadesCompras(compras: any[]): void {
-    if (!compras || compras.length === 0) return;
-
-    compras.slice(0, 3).forEach((c) => {
-      this.actividades.push({
-        tipo: 'compra',
-        descripcion: `Se registró una compra (ID: ${c.id_compra})`,
-        fecha: this.formatearFecha(c.fecha_compra),
-        icono: '🛒',
-      });
+  private cargarActividadesRecientes(): void {
+    this.actividades = []; // Limpiar actividades anteriores
+    
+    // Cargar compras recientes (activas)
+    this.http.get<any[]>(`${this.API}/compras`).subscribe({
+      next: (compras) => {
+        if (compras && compras.length > 0) {
+          const comprasOrdenadas = compras
+            .sort((a, b) => {
+              const fechaA = new Date(a.fecha_compra || 0).getTime();
+              const fechaB = new Date(b.fecha_compra || 0).getTime();
+              return fechaB - fechaA;
+            })
+            .slice(0, 5);
+            
+          comprasOrdenadas.forEach((c) => {
+            this.actividades.push({
+              tipo: 'compra',
+              descripcion: `Se registró una compra (ID: ${c.id_compra})`,
+              fecha: this.formatearFecha(c.fecha_compra),
+              fechaOriginal: c.fecha_compra,
+              icono: '🛒',
+            });
+          });
+        }
+        this.ordenarActividades();
+      },
+      error: (err) => {
+        console.error('Error cargando compras para actividades:', err);
+      },
     });
 
-    this.ordenarActividades();
-  }
-
-  /**
-   * Agrega actividades de ventas al listado
-   */
-  private agregarActividadesVentas(ventas: any[]): void {
-    if (!ventas || ventas.length === 0) return;
-
-    ventas.slice(0, 3).forEach((v) => {
-      this.actividades.push({
-        tipo: 'venta',
-        descripcion: `Se registró una venta (ID: ${v.id_venta})`,
-        fecha: this.formatearFecha(v.fecha),
-        icono: '💰',
-      });
+    // Cargar ventas recientes (activas y eliminadas)
+    this.http.get<any[]>(`${this.API}/ventas?incluir_eliminadas=true`).subscribe({
+      next: (ventas) => {
+        if (ventas && ventas.length > 0) {
+          ventas.forEach((v) => {
+            const fechaVenta = v.fecha || v.fecha_venta;
+            const fechaEliminacion = v.eliminado_en;
+            
+            if (v.activo === false && fechaEliminacion) {
+              // Venta eliminada
+              this.actividades.push({
+                tipo: 'venta_eliminada',
+                descripcion: `Se eliminó una venta (ID: ${v.id_venta})`,
+                fecha: this.formatearFecha(fechaEliminacion),
+                fechaOriginal: fechaEliminacion,
+                icono: '🗑️',
+              });
+            } else if (v.activo !== false) {
+              // Venta activa
+              this.actividades.push({
+                tipo: 'venta',
+                descripcion: `Se registró una venta (ID: ${v.id_venta})`,
+                fecha: this.formatearFecha(fechaVenta),
+                fechaOriginal: fechaVenta,
+                icono: '💰',
+              });
+            }
+          });
+        }
+        this.ordenarActividades();
+      },
+      error: (err) => {
+        console.error('Error cargando ventas para actividades:', err);
+      },
     });
 
-    this.ordenarActividades();
+    // Cargar productos recientes (creados)
+    this.http.get<any[]>(`${this.API}/productos`).subscribe({
+      next: (productos) => {
+        if (productos && productos.length > 0) {
+          // Ordenar por fecha de creación más reciente
+          const productosOrdenados = productos
+            .filter((p) => p.creado_en) // Solo productos con fecha de creación
+            .sort((a, b) => {
+              const fechaA = new Date(a.creado_en || 0).getTime();
+              const fechaB = new Date(b.creado_en || 0).getTime();
+              return fechaB - fechaA;
+            })
+            .slice(0, 3); // Solo los 3 más recientes
+              
+          productosOrdenados.forEach((p) => {
+            this.actividades.push({
+              tipo: 'producto',
+              descripcion: `Se registró un producto: ${p.nombre_producto}`,
+              fecha: this.formatearFecha(p.creado_en),
+              fechaOriginal: p.creado_en,
+              icono: '📦',
+            });
+          });
+        }
+        this.ordenarActividades();
+      },
+      error: (err) => {
+        console.error('Error cargando productos para actividades:', err);
+      },
+    });
   }
+
 
   /**
    * Ordena actividades por fecha (más reciente primero)
@@ -319,32 +375,50 @@ export class Overview implements OnInit {
   private ordenarActividades(): void {
     this.actividades.sort((a, b) => {
       try {
-        const fechaA = new Date(a.fecha).getTime();
-        const fechaB = new Date(b.fecha).getTime();
-        return fechaB - fechaA;
+        const fechaA = new Date(a.fechaOriginal || a.fecha).getTime();
+        const fechaB = new Date(b.fechaOriginal || b.fecha).getTime();
+        return fechaB - fechaA; // Más reciente primero
       } catch {
         return 0;
       }
     });
+    // Limitar a las 10 más recientes (se mostrarán 5 en la UI)
+    this.actividades = this.actividades.slice(0, 10);
   }
 
   /**
-   * Formatea una fecha al formato DD/MM/YYYY HH:MM
+   * Formatea una fecha al formato DD/MM/YYYY HH:MM:SS de forma profesional
    */
   private formatearFecha(fecha?: string): string {
     if (!fecha) return '';
 
     try {
       const d = new Date(fecha);
+      
+      // Validar que la fecha sea válida
+      if (isNaN(d.getTime())) {
+        return fecha;
+      }
+      
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
       const hh = String(d.getHours()).padStart(2, '0');
       const min = String(d.getMinutes()).padStart(2, '0');
-      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
     } catch {
       return fecha;
     }
+  }
+
+  /**
+   * Método público para refrescar los datos del dashboard
+   * Se puede llamar desde otros componentes cuando hay cambios
+   */
+  refrescarDatos(): void {
+    this.cargarDatos();
   }
 
   // ========== Acciones de navegación ==========

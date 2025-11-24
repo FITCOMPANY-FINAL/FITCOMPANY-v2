@@ -2,11 +2,12 @@ import { Component, HostListener, inject, OnDestroy, OnInit } from '@angular/cor
 import { Sidebar } from './sidebar/sidebar';
 import { RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { CornerAlertBellComponent } from '../../shared/navbar/corner-alert-bell.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [Sidebar, RouterOutlet],
+  imports: [Sidebar, RouterOutlet, CornerAlertBellComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })

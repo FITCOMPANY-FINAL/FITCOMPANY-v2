@@ -12,6 +12,7 @@ import { finalize } from 'rxjs/operators';
 import { VentasService } from '../../../../shared/services/ventas.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
 import { MetodosPagoService, MetodoPago } from '../../../../shared/services/metodos-pago.service';
+import { AlertsService } from '../../../../shared/services/alerts.service';
 import { Venta } from '../../../../shared/models/venta.model';
 import { Producto } from '../../../../shared/models/producto.model';
 import { AbonosModalComponent } from '../../modals/abonos-modal/abonos-modal.component';
@@ -28,6 +29,7 @@ export class Ventas implements OnInit {
   private ventasSrv = inject(VentasService);
   private productosSrv = inject(ProductosService);
   private metodosPagoSrv = inject(MetodosPagoService);
+  private alertsService = inject(AlertsService);
 
   rows: Venta[] = [];
   productos: Producto[] = [];
@@ -481,6 +483,8 @@ export class Ventas implements OnInit {
           this.showOk(res?.message || `Venta registrada (ID: ${res?.venta?.id_venta ?? ''})`);
           this.loadRows();
           this.resetForm();
+          this.alertsService.refresh(); // Refrescar alertas después de crear venta
+          window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (e) => {
@@ -547,6 +551,8 @@ export class Ventas implements OnInit {
         }
         this.showOk(res?.message || 'Venta eliminada correctamente');
         this.loadRows();
+        this.alertsService.refresh(); // Refrescar alertas después de eliminar venta
+        window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
       },
       error: (e) => {
         const data = e?.error || {};

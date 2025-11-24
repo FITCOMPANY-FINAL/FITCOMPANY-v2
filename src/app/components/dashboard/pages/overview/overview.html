@@ -65,11 +65,21 @@
       <div *ngIf="actividades.length > 0" class="space-y-4">
         <div
           *ngFor="let act of actividades.slice(0, 5)"
+          [ngClass]="{
+            'opacity-75': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')
+          }"
           class="flex items-start gap-4 pb-4 border-b border-white/5 last:border-0"
         >
           <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-white">{{ act.descripcion }}</p>
+            <p 
+              [ngClass]="{
+                'text-sm font-medium text-white': !act.tipo.includes('eliminada') && !act.tipo.includes('eliminado'),
+                'text-sm font-medium text-red-300': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')
+              }"
+            >
+              {{ act.descripcion }}
+            </p>
             <p class="text-xs text-textc-mute mt-1">{{ act.fecha }}</p>
           </div>
         </div>
@@ -81,8 +91,8 @@
   <div *ngIf="!esAdmin" class="space-y-8">
     <!-- Bienvenida -->
     <header class="text-center py-8">
-      <h1 class="text-3xl font-bold text-brand-500 mb-2">¡Hola, {{ nombreUsuario }}!</h1>
-      <p class="text-textc-mute">Accede a los módulos disponibles</p>
+      <h1 class="text-3xl font-bold text-brand-500 mb-2">¡Hola, Usuario!</h1>
+      <p class="text-textc-mute">Resumen de actividades y estadísticas del día</p>
     </header>
 
     <!-- Resumen rápido -->
@@ -110,27 +120,6 @@
       </div>
     </section>
 
-    <!-- Módulos disponibles - Dinámicos según permisos -->
-    <section
-      *ngIf="modulosDisponibles.length > 0"
-      class="rounded-2xl bg-surface-800 border border-white/5 p-6"
-    >
-      <h2 class="text-lg font-semibold text-brand-500 mb-5">Módulos</h2>
-      <div
-        [ngClass]="modulosDisponibles.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'"
-        class="grid gap-3"
-      >
-        <button
-          *ngFor="let modulo of modulosDisponibles"
-          (click)="navegarAModulo(modulo.ruta)"
-          [ngClass]="[modulo.borderColor, modulo.bgColor, modulo.textColor]"
-          class="text-left px-5 py-4 rounded-xl border hover:border-opacity-100 transition font-medium"
-        >
-          {{ modulo.icono }} {{ modulo.label }}
-        </button>
-      </div>
-    </section>
-
     <!-- Actividades recientes -->
     <section
       *ngIf="actividades.length > 0"
@@ -139,12 +128,22 @@
       <h2 class="text-lg font-semibold text-brand-500 mb-5">Actividades Recientes</h2>
       <div class="space-y-4">
         <div
-          *ngFor="let act of actividades.slice(0, 3)"
+          *ngFor="let act of actividades.slice(0, 5)"
+          [ngClass]="{
+            'opacity-75': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')
+          }"
           class="flex items-start gap-4 pb-4 border-b border-white/5 last:border-0"
         >
           <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-white">{{ act.descripcion }}</p>
+            <p 
+              [ngClass]="{
+                'text-sm font-medium text-white': !act.tipo.includes('eliminada') && !act.tipo.includes('eliminado'),
+                'text-sm font-medium text-red-300': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')
+              }"
+            >
+              {{ act.descripcion }}
+            </p>
             <p class="text-xs text-textc-mute mt-1">{{ act.fecha }}</p>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } fr
 import { finalize } from 'rxjs/operators';
 import { ComprasService } from '../../../../shared/services/compras.service';
 import { ProductosService } from '../../../../shared/services/productos.service';
+import { AlertsService } from '../../../../shared/services/alerts.service';
 import { Compra } from '../../../../shared/models/compra.model';
 import { Producto } from '../../../../shared/models/producto.model';
 
@@ -17,6 +18,7 @@ export class Compras implements OnInit {
   private fb = inject(FormBuilder);
   private comprasSrv = inject(ComprasService);
   private productosSrv = inject(ProductosService);
+  private alertsService = inject(AlertsService);
 
   rows: Compra[] = [];
   productos: Producto[] = [];
@@ -293,6 +295,8 @@ export class Compras implements OnInit {
           }
           this.loadData();
           this.resetForm();
+          this.alertsService.refresh(); // Refrescar alertas después de crear/editar compra
+          window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
         },
         error: (e) => {
           const errorMessage = e?.error?.message || 'Error al guardar la compra.';
@@ -385,6 +389,8 @@ export class Compras implements OnInit {
         next: (res) => {
           this.showOk(res?.message || 'Compra eliminada correctamente y stock revertido.');
           this.loadData();
+          this.alertsService.refresh(); // Refrescar alertas después de eliminar compra
+          window.dispatchEvent(new Event('dashboard:refresh')); // Refrescar dashboard
         },
         error: (e) => {
           const errorMessage = e?.error?.message || 'Error al eliminar compra.';
