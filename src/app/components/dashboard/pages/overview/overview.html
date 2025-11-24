@@ -1,113 +1,154 @@
-<div class="space-y-8">
-  <!-- Título -->
-  <header class="flex items-center justify-between">
-    <h1 class="text-2xl sm:text-3xl font-bold text-brand-500">Panel general</h1>
-  </header>
+<div class="space-y-8 pb-8">
+  <!-- ========== DASHBOARD ADMIN ========== -->
+  <div *ngIf="esAdmin" class="space-y-8">
+    <!-- Encabezado -->
+    <header>
+      <h1 class="text-3xl font-bold text-brand-500">Panel de Control</h1>
+      <p class="text-sm text-textc-mute mt-1">Bienvenido, {{ nombreUsuario }}</p>
+    </header>
 
-  <!-- Tarjetas de estadísticas -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-    <!-- Productos en catálogo -->
-    <div
-      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
-    >
-      <p class="text-xs text-textc-mute">Productos</p>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">{{ totalProductos }}</span>
-        <span
-          class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30"
-        >
-          Catálogo
-        </span>
-      </div>
-    </div>
-
-    <!-- Compras registradas -->
-    <div
-      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
-    >
-      <p class="text-xs text-textc-mute">Compras</p>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">{{ totalCompras }}</span>
-        <span
-          class="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/30"
-        >
-          {{ comprasHoy }} hoy
-        </span>
-      </div>
-    </div>
-
-    <!-- Ventas registradas -->
-    <div
-      class="rounded-2xl bg-surface-800 border border-white/5 p-5 hover:border-brand-500/30 transition"
-    >
-      <p class="text-xs text-textc-mute">Ventas</p>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-brand-500">{{ totalVentas }}</span>
-        <span
-          class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
-        >
-          {{ ventasHoy }} hoy
-        </span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Sección de ingresos + actividad -->
-  <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Ingresos de este mes -->
-    <div class="lg:col-span-2 rounded-2xl bg-surface-800 border border-white/5 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-brand-500">Ingresos (este mes)</h2>
-        <div class="text-3xl font-extrabold text-emerald-400">
-          {{ ingresosMes | currency:'COP':'symbol-narrow':'1.0-0' }}
+    <!-- Tarjetas principales -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <!-- Productos -->
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 hover:border-brand-500/30 transition"
+      >
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-textc-mute uppercase tracking-wide font-semibold">Productos</p>
+            <p class="text-4xl font-extrabold text-brand-500 mt-3">{{ totalProductos }}</p>
+            <p class="text-xs text-textc-mute mt-2">En catálogo</p>
+          </div>
+          <span class="text-3xl opacity-30">📦</span>
         </div>
       </div>
-      <p class="text-xs text-textc-mute">Ingresos totales generados por ventas en el mes actual</p>
-    </div>
+
+      <!-- Compras -->
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 hover:border-orange-500/30 transition"
+      >
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-textc-mute uppercase tracking-wide font-semibold">Compras</p>
+            <p class="text-4xl font-extrabold text-orange-400 mt-3">{{ totalCompras }}</p>
+            <p class="text-xs text-textc-mute mt-2">
+              <span class="text-orange-300 font-semibold">{{ comprasHoy }}</span> registradas hoy
+            </p>
+          </div>
+          <span class="text-3xl opacity-30">🛒</span>
+        </div>
+      </div>
+
+      <!-- Ventas -->
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 hover:border-emerald-500/30 transition"
+      >
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-textc-mute uppercase tracking-wide font-semibold">Ventas</p>
+            <p class="text-4xl font-extrabold text-emerald-400 mt-3">{{ totalVentas }}</p>
+            <p class="text-xs text-textc-mute mt-2">
+              <span class="text-emerald-300 font-semibold">{{ ventasHoy }}</span> registradas hoy
+            </p>
+          </div>
+          <span class="text-3xl opacity-30">💰</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Actividades recientes -->
-    <div class="rounded-2xl bg-surface-800 border border-white/5 p-6">
-      <h3 class="text-base font-semibold text-brand-500 mb-4">Últimas actividades</h3>
-      <ol class="space-y-3">
-        <li
-          *ngFor="let act of actividades.slice(0, 3)"
-          class="flex items-start gap-3 border-l-4 border-brand-500 pl-3"
+    <section class="rounded-2xl bg-surface-800 border border-white/5 p-6">
+      <h2 class="text-lg font-semibold text-brand-500 mb-5">Actividades Recientes</h2>
+      <div *ngIf="actividades.length === 0" class="text-center py-8">
+        <p class="text-sm text-textc-mute">No hay actividades aún</p>
+      </div>
+      <div *ngIf="actividades.length > 0" class="space-y-4">
+        <div
+          *ngFor="let act of actividades.slice(0, 5)"
+          class="flex items-start gap-4 pb-4 border-b border-white/5 last:border-0"
         >
-          <div class="text-lg">{{ act.icono }}</div>
-          <div class="flex-1">
-            <p class="text-xs font-medium text-white">{{ act.descripcion }}</p>
-            <p class="text-xs text-textc-mute mt-0.5">{{ act.fecha }}</p>
+          <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white">{{ act.descripcion }}</p>
+            <p class="text-xs text-textc-mute mt-1">{{ act.fecha }}</p>
           </div>
-        </li>
-        <li *ngIf="actividades.length === 0" class="text-xs text-textc-mute">
-          Sin actividades recientes
-        </li>
-      </ol>
-    </div>
-  </section>
+        </div>
+      </div>
+    </section>
+  </div>
 
-  <!-- Acciones rápidas -->
-  <section class="rounded-2xl bg-surface-800 border border-white/5 p-6">
-    <h3 class="text-base font-semibold text-brand-500 mb-4">Acciones rápidas</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <button
-        (click)="irACompras()"
-        class="text-left px-4 py-3 rounded-xl border border-brand-500/30 bg-brand-500/5 text-brand-400 hover:bg-brand-500/10 hover:border-brand-500/50 transition"
+  <!-- ========== DASHBOARD NO ADMIN ========== -->
+  <div *ngIf="!esAdmin" class="space-y-8">
+    <!-- Bienvenida -->
+    <header class="text-center py-8">
+      <h1 class="text-3xl font-bold text-brand-500 mb-2">¡Hola, {{ nombreUsuario }}!</h1>
+      <p class="text-textc-mute">Accede a los módulos disponibles</p>
+    </header>
+
+    <!-- Resumen rápido -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 text-center hover:border-brand-500/30 transition"
       >
-        🛒 Registrar compra
-      </button>
-      <button
-        (click)="irAVentas()"
-        class="text-left px-4 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition"
+        <p class="text-3xl mb-3">📦</p>
+        <p class="text-xs text-textc-mute uppercase tracking-wide mb-2">Productos</p>
+        <p class="text-3xl font-extrabold text-brand-500">{{ totalProductos }}</p>
+      </div>
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 text-center hover:border-orange-500/30 transition"
       >
-        💰 Registrar venta
-      </button>
-      <button
-        (click)="irAProductos()"
-        class="text-left px-4 py-3 rounded-xl border border-blue-500/30 bg-blue-500/5 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/50 transition"
+        <p class="text-3xl mb-3">🛒</p>
+        <p class="text-xs text-textc-mute uppercase tracking-wide mb-2">Compras hoy</p>
+        <p class="text-3xl font-extrabold text-orange-400">{{ comprasHoy }}</p>
+      </div>
+      <div
+        class="rounded-2xl bg-surface-800 border border-white/5 p-6 text-center hover:border-emerald-500/30 transition"
       >
-        📦 Ver productos
-      </button>
-    </div>
-  </section>
+        <p class="text-3xl mb-3">💰</p>
+        <p class="text-xs text-textc-mute uppercase tracking-wide mb-2">Ventas hoy</p>
+        <p class="text-3xl font-extrabold text-emerald-400">{{ ventasHoy }}</p>
+      </div>
+    </section>
+
+    <!-- Módulos disponibles - Dinámicos según permisos -->
+    <section
+      *ngIf="modulosDisponibles.length > 0"
+      class="rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h2 class="text-lg font-semibold text-brand-500 mb-5">Módulos</h2>
+      <div
+        [ngClass]="modulosDisponibles.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'"
+        class="grid gap-3"
+      >
+        <button
+          *ngFor="let modulo of modulosDisponibles"
+          (click)="navegarAModulo(modulo.ruta)"
+          [ngClass]="[modulo.borderColor, modulo.bgColor, modulo.textColor]"
+          class="text-left px-5 py-4 rounded-xl border hover:border-opacity-100 transition font-medium"
+        >
+          {{ modulo.icono }} {{ modulo.label }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Actividades recientes -->
+    <section
+      *ngIf="actividades.length > 0"
+      class="rounded-2xl bg-surface-800 border border-white/5 p-6"
+    >
+      <h2 class="text-lg font-semibold text-brand-500 mb-5">Actividades Recientes</h2>
+      <div class="space-y-4">
+        <div
+          *ngFor="let act of actividades.slice(0, 3)"
+          class="flex items-start gap-4 pb-4 border-b border-white/5 last:border-0"
+        >
+          <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white">{{ act.descripcion }}</p>
+            <p class="text-xs text-textc-mute mt-1">{{ act.fecha }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
