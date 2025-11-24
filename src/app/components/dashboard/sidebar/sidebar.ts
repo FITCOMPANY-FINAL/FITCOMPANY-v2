@@ -97,6 +97,10 @@ export class Sidebar implements OnInit {
           (h.titulo === f.titulo && h.padre === f.padre)
         )
       );
+    
+    // Debug: mostrar todos los hijos de reportes
+    const hijosReportes = hijos.filter(h => h.url?.includes('reporte'));
+    console.log('📊 Hijos de reportes encontrados:', hijosReportes.map(h => ({ titulo: h.titulo, url: h.url, padre: h.padre })));
 
     // Construir estructura jerárquica
     const menuItems = padres
@@ -105,6 +109,10 @@ export class Sidebar implements OnInit {
         const hijosDelPadre = hijos
           .filter((h) => h.padre === padre.id)
           .map((h) => {
+            // Debug para reportes
+            if (padre.titulo === 'Reportes' || padre.titulo?.includes('Reporte')) {
+              console.log(`🔍 Procesando hijo de Reportes: "${h.titulo}" con URL: "${h.url}"`);
+            }
             // Extraer la ruta del URL (ej: "/dashboard/ventas" -> "ventas")
             let urlPath = h.url?.replace('/dashboard/', '') || '';
             
@@ -159,6 +167,11 @@ export class Sidebar implements OnInit {
             index === self.findIndex((h) => h.link === item.link || h.label === item.label)
           )
           .sort((a, b) => a.label.localeCompare(b.label)); // Ordenar hijos alfabéticamente
+
+        // Debug para reportes
+        if (padre.titulo === 'Reportes' || padre.titulo?.includes('Reporte')) {
+          console.log(`📋 Hijos finales de Reportes:`, hijosDelPadre.map(h => ({ label: h.label, link: h.link })));
+        }
 
         // Solo incluir el padre si tiene hijos
         if (hijosDelPadre.length === 0) {
