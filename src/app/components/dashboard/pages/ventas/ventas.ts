@@ -351,6 +351,8 @@ export class Ventas implements OnInit {
     this.errorMsg = msg;
     this.okMsg = '';
     this.autoHide();
+    // Hacer scroll suave hacia arriba para que el usuario vea el error
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   private clearViolations() {
@@ -519,9 +521,30 @@ export class Ventas implements OnInit {
   }
 
   confirmarEliminar(id: number) {
-    this.pendingDeleteId = id ?? null;
-    this.motivoEliminacion = '';
-    this.confirmOpen = true;
+    // Primero validar si la venta tiene pagos registrados
+    this.ventasSrv.obtenerAbonos(id).subscribe({
+      next: (res: any) => {
+        const abonos = res.abonos || [];
+
+        // Si tiene pagos/abonos, bloquear eliminación
+        if (abonos.length > 0) {
+          const totalPagado = abonos.reduce((sum: number, a: any) => sum + Number(a.monto || 0), 0);
+          this.showError(
+            `❌ No se puede eliminar esta venta porque ya tiene ${abonos.length} pago(s) registrado(s) por $${totalPagado.toLocaleString('es-CO')}. El dinero está en caja y eliminarla generaría un descuadre financiero.`,
+          );
+          return;
+        }
+
+        // Si NO tiene pagos, abrir modal del motivo
+        this.pendingDeleteId = id ?? null;
+        this.motivoEliminacion = '';
+        this.confirmOpen = true;
+      },
+      error: (err) => {
+        console.error('Error al validar pagos:', err);
+        this.showError('❌ Error al validar la venta. Intenta nuevamente.');
+      },
+    });
   }
   closeConfirm() {
     this.confirmOpen = false;
