@@ -72,7 +72,7 @@
         >
           <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
           <div class="flex-1 min-w-0">
-            <p 
+            <p
               [ngClass]="{
                 'text-sm font-medium text-white': !act.tipo.includes('eliminada') && !act.tipo.includes('eliminado'),
                 'text-sm font-medium text-red-300': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')
@@ -91,7 +91,9 @@
   <div *ngIf="!esAdmin" class="space-y-8">
     <!-- Bienvenida -->
     <header class="text-center py-8">
-      <h1 class="text-3xl font-bold text-brand-500 mb-2">¡Hola, Usuario!</h1>
+      <h1 class="text-3xl font-bold text-brand-500 mb-2">
+        ¡Hola, {{ nombreUsuario || 'Usuario' }}!
+      </h1>
       <p class="text-textc-mute">Resumen de actividades y estadísticas del día</p>
     </header>
 
@@ -136,7 +138,7 @@
         >
           <span class="text-2xl flex-shrink-0">{{ act.icono }}</span>
           <div class="flex-1 min-w-0">
-            <p 
+            <p
               [ngClass]="{
                 'text-sm font-medium text-white': !act.tipo.includes('eliminada') && !act.tipo.includes('eliminado'),
                 'text-sm font-medium text-red-300': act.tipo.includes('eliminada') || act.tipo.includes('eliminado')

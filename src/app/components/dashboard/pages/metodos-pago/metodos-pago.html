@@ -2,18 +2,24 @@
   <h2 class="text-center text-xl font-bold">Gestión de Métodos de Pago</h2>
 
   <!-- Alertas (mismo estilo que Compras) -->
-  <div *ngIf="okMsg"
-       class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center">
+  <div
+    *ngIf="okMsg"
+    class="mx-auto w-full max-w-3xl rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-green-300 text-center"
+  >
     {{ okMsg }}
   </div>
 
-  <div *ngIf="errorMsg"
-       class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line">
+  <div
+    *ngIf="errorMsg"
+    class="mx-auto w-full max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-center whitespace-pre-line"
+  >
     {{ errorMsg }}
   </div>
 
   <!-- Card: Formulario -->
-  <section class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7">
+  <section
+    class="mx-auto w-full max-w-3xl rounded-2xl bg-surface-800 border border-white/5 p-6 sm:p-7"
+  >
     <h3 class="text-lg font-semibold text-brand-500 mb-4">
       {{ editando ? 'Editar método de pago' : 'Agregar método de pago' }}
     </h3>
@@ -26,8 +32,7 @@
         <input
           type="text"
           formControlName="nombre_metodo_pago"
-          class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
-                 focus:border-brand-500 placeholder:text-sm"
+          class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-sm"
           placeholder="Ej: Efectivo, Tarjeta de crédito"
           autocomplete="off"
         />
@@ -38,28 +43,22 @@
         <input
           type="text"
           formControlName="descripcion_metodo_pago"
-          class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none
-                 focus:border-brand-500 placeholder:text-sm"
+          class="w-full rounded-xl bg-surface-900 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 placeholder:text-sm"
           placeholder="Breve descripción del método"
         />
       </div>
 
-      <div class="flex items-center gap-3">
-        <input
-          type="checkbox"
-          formControlName="activo"
-          class="w-4 h-4 rounded"
-        />
+      <div class="flex items-center gap-3 hidden">
+        <input type="checkbox" formControlName="activo" class="w-4 h-4 rounded" />
         <label class="text-sm">Activo</label>
       </div>
 
       <div class="flex gap-3">
         <button
           type="submit"
-          class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500
-                 font-semibold py-3 hover:bg-brand-500 hover:text-black transition
-                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-          [disabled]="saving">
+          class="flex-1 rounded-xl border-2 border-dashed border-brand-500/70 text-brand-500 font-semibold py-3 hover:bg-brand-500 hover:text-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          [disabled]="saving"
+        >
           {{ saving ? 'Guardando...' : (editando ? 'Actualizar' : 'Agregar') }}
         </button>
 
@@ -67,7 +66,8 @@
           *ngIf="editando"
           type="button"
           class="px-4 rounded-xl border border-white/10 hover:bg-white/5 transition"
-          (click)="cancelarEdicion()">
+          (click)="cancelarEdicion()"
+        >
           Cancelar
         </button>
       </div>
@@ -79,9 +79,7 @@
     <div class="rounded-2xl bg-surface-800 border border-white/5 overflow-hidden">
       <div class="px-6 py-4 border-b border-white/5 font-semibold">Listado</div>
 
-      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">
-        Cargando...
-      </div>
+      <div *ngIf="loadingList" class="px-6 py-10 text-center text-textc-mute">Cargando...</div>
 
       <div *ngIf="!loadingList && rows.length === 0" class="px-6 py-10 text-center text-textc-mute">
         No hay registros
@@ -98,7 +96,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let m of rows" class="border-b border-white/5" [class.opacity-60]="!m.activo">
+            <tr
+              *ngFor="let m of rows"
+              class="border-b border-white/5"
+              [class.opacity-60]="!m.activo"
+            >
               <td class="px-6 py-3">{{ m.nombre_metodo_pago }}</td>
               <td class="px-6 py-3">{{ m.descripcion_metodo_pago || '-' }}</td>
               <td class="px-6 py-3">
@@ -106,13 +108,18 @@
                 <span *ngIf="!m.activo" class="text-gray-400">Inactivo</span>
               </td>
               <td class="px-6 py-3 whitespace-nowrap">
-                <button class="text-brand-500 hover:text-brand-600 mr-3" type="button" (click)="editar(m)">
+                <button
+                  class="text-brand-500 hover:text-brand-600 mr-3"
+                  type="button"
+                  (click)="editar(m)"
+                >
                   Editar
                 </button>
                 <button
                   type="button"
                   class="text-red-400 hover:text-red-300"
-                  (click)="confirmarEliminar(m)">
+                  (click)="confirmarEliminar(m)"
+                >
                   Eliminar
                 </button>
               </td>
@@ -127,23 +134,25 @@
   <div *ngIf="confirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center">
     <div class="absolute inset-0 bg-black/60"></div>
 
-    <div class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl">
+    <div
+      class="relative z-[61] w-full max-w-md rounded-2xl bg-surface-800 border border-white/10 p-6 shadow-xl"
+    >
       <h3 class="text-lg font-semibold mb-2">Confirmar eliminación</h3>
-      <p class="text-sm text-textc-mute">
-        ¿Seguro que deseas eliminar este método de pago?
-      </p>
+      <p class="text-sm text-textc-mute">¿Seguro que deseas eliminar este método de pago?</p>
 
       <div class="mt-6 flex gap-3 justify-end">
         <button
           type="button"
           class="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5"
-          (click)="closeConfirm()">
+          (click)="closeConfirm()"
+        >
           Cancelar
         </button>
         <button
           type="button"
           class="rounded-xl bg-red-500/90 text-black font-semibold px-4 py-2 hover:bg-red-400"
-          (click)="doEliminarConfirmado()">
+          (click)="doEliminarConfirmado()"
+        >
           Eliminar
         </button>
       </div>
